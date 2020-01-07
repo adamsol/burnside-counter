@@ -16,7 +16,7 @@ Usage
 ```
 from burnside import *
 
-for n in range(2, 10):
+for n in range(2, 8):
     c = EdgeColoring(Clique(n)).orbit_count()
     print("There are {} different graphs on {} unlabeled nodes.".format(c, n))
 ```

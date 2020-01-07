@@ -1,10 +1,7 @@
 
-import operator
 from abc import abstractmethod, ABC
-from collections.abc import Iterable
-from functools import reduce
 
-from .group import S, Z
+from .group import S, Z, Product
 
 __all__ = [
     'Operation', 'ComplexOperation', 'Identity', 'EdgeColorSwap', 'EdgeReversal', 'VertexPermutation',
@@ -32,17 +29,12 @@ class Operation(ABC):
 class ComplexOperation(Operation):
 
     def __init__(self, *operations):
-        if len(operations) == 1 and isinstance(operations[0], Iterable):
-            operations = list(operations[0])
-        super().__init__(reduce(operator.mul, (operation.group for operation in operations)))
+        super().__init__(Product(*[operation.group for operation in operations]))
         self.operations = operations
 
     def apply(self, g, x):
-        if len(self.operations) == 1:
-            self.operations[0].apply(g, x)
-        else:
-            for i, operation in enumerate(self.operations):
-                operation.apply(g[i], x)
+        for operation, g_ in zip(self.operations, g):
+            operation.apply(g_, x)
 
 
 class Identity(Operation):
@@ -80,19 +72,16 @@ class EdgeReversal(Operation):
 
 class VertexPermutation(Operation):
 
-    def __init__(self, size):
-        super().__init__(S(size))
+    def __init__(self, *sizes):
+        super().__init__(Product(*[S(size) for size in sizes]))
 
     def apply(self, g, x):
-        p = 0
-        d = {}
-        for i in g:
-            for j in range(g[i]):
-                for k in range(i):
-                    d[p+k] = (p, i)
-                p += i
-        for e in x:
-            if e.a in d:
-                e.a = d[e.a][0] + (e.a - d[e.a][0] + 1) % d[e.a][1]
-            if e.b in d:
-                e.b = d[e.b][0] + (e.b - d[e.b][0] + 1) % d[e.b][1]
+        k = 0
+        for p in g:
+            k2 = k + len(p)
+            for e in x:
+                if k <= e.a < k2:
+                    e.a = p[e.a-k] + k
+                if k <= e.b < k2:
+                    e.b = p[e.b-k] + k
+            k = k2

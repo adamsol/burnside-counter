@@ -1,8 +1,6 @@
 
 from abc import ABC, abstractmethod
-from itertools import product
-
-from .utils import permutation_types
+from itertools import permutations, product
 
 
 class Group(ABC):
@@ -29,28 +27,28 @@ class Z(Group):
         self.order = order
 
     def __iter__(self):
-        return product(range(self.order), [1])
+        return iter(range(self.order))
 
 
 class S(Group):
     """
-    Symmetric (permutation) group on {1, 2, ..., n}.
+    Symmetric (permutation) group on {0, 1, ..., n-1}.
     """
     def __init__(self, order):
         super().__init__()
         self.order = order
 
     def __iter__(self):
-        return permutation_types(self.order)
+        return permutations(range(self.order))
 
 
 class Product(Group):
     """
     Direct product / direct sum of groups.
     """
-    def __init__(self, group1, group2):
+    def __init__(self, *groups):
         super().__init__()
-        self.groups = [group1, group2]
+        self.groups = groups
 
     def __iter__(self):
-        return (((g1, g2), c1 * c2) for (g1, c1), (g2, c2) in product(*self.groups))
+        return product(*self.groups)

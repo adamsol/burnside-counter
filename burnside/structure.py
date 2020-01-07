@@ -9,6 +9,10 @@ __all__ = [
 ]
 
 
+class NonAutomorphism(Exception):
+    pass
+
+
 class Structure(ABC):
 
     def __init__(self, graph, operation):
@@ -24,10 +28,13 @@ class Structure(ABC):
         a = 0  # number of fixed points
         b = 0  # number of group elements
 
-        for g, c in self.operation:
-            x = self.fixed_point_count(g)
-            a += c * x
-            b += c
+        for g in self.operation:
+            try:
+                c = self.fixed_point_count(g)
+            except NonAutomorphism:
+                continue
+            a += c
+            b += 1
 
         assert a % b == 0
         return a // b
@@ -48,12 +55,16 @@ class EdgeColoring(Structure):
         x = self.graph.build()
         edges = list(x.values())
 
+        self.operation.apply(g, edges)
+
+        for e in edges:
+            if (e.v0, e.v1) not in x:
+                raise NonAutomorphism()
+
         for e in edges:
             make_set(e)
 
         while x:
-            self.operation.apply(g, x.values())
-
             to_delete = []
 
             for p, e in x.items():
@@ -66,6 +77,8 @@ class EdgeColoring(Structure):
 
             for p in to_delete:
                 del x[p]
+
+            self.operation.apply(g, x.values())
 
         s = set(find(e) for e in edges)
         return self.colors ** len(s)
