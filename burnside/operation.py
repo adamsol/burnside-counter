@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC
 from .group import S, Z, Product
 
 __all__ = [
-    'Operation', 'ComplexOperation', 'Identity', 'EdgeColorSwap', 'EdgeReversal', 'VertexPermutation',
+    'Operation', 'ComplexOperation', 'Identity', 'EdgeColorSwap', 'EdgeReversal', 'VertexPermutation', 'VertexCycle', 'Reflection',
 ]
 
 
@@ -54,7 +54,7 @@ class EdgeColorSwap(Operation):
     def apply(self, g, x):
         if not g:
             return
-        for e in x:
+        for e in x.edges:
             e.change()
 
 
@@ -66,7 +66,7 @@ class EdgeReversal(Operation):
     def apply(self, g, x):
         if not g:
             return
-        for e in x:
+        for e in x.edges:
             e.reverse()
 
 
@@ -79,9 +79,37 @@ class VertexPermutation(Operation):
         k = 0
         for p in g:
             k2 = k + len(p)
-            for e in x:
-                if k <= e.a < k2:
-                    e.a = p[e.a-k] + k
-                if k <= e.b < k2:
-                    e.b = p[e.b-k] + k
+            for v in x.vertices:
+                if k <= v.q < k2:
+                    v.q = p[v.q - k] + k
             k = k2
+
+
+class VertexCycle(Operation):
+
+    def __init__(self, *sizes):
+        super().__init__(Product(*[Z(size) for size in sizes]))
+        self.sizes = sizes
+
+    def apply(self, g, x):
+        k = 0
+        for size, p in zip(self.sizes, g):
+            k2 = k + size
+            for v in x.vertices:
+                if k <= v.q < k2:
+                    v.q = (v.q - k + p) % size + k
+            k = k2
+
+
+class Reflection(Operation):
+
+    def __init__(self, size):
+        super().__init__(Z(2))
+        self.size = size
+
+    def apply(self, g, x):
+        if not g:
+            return
+        for v in x.vertices:
+            if v.q < self.size:
+                v.q = self.size - v.q - 1

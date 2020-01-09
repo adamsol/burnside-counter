@@ -5,7 +5,7 @@ from .operation import VertexPermutation
 from .utils import make_set, union, find
 
 __all__ = [
-    'Structure', 'EdgeColoring', 'EdgeOrientation',
+    'Structure', 'VertexColoring', 'EdgeColoring', 'EdgeOrientation',
 ]
 
 
@@ -36,8 +36,56 @@ class Structure(ABC):
             a += c
             b += 1
 
+        if a == b == 0:
+            return 1
+
         assert a % b == 0
         return a // b
+
+
+class VertexColoring(Structure):
+
+    def __init__(self, graph, operation=None, colors=2):
+        if operation is None:
+            operation = VertexPermutation(graph.size)
+        super().__init__(graph, operation)
+        self.colors = colors
+
+    def _contradiction(self, v):
+        return v.c != 0
+
+    def fixed_point_count(self, g):
+        self.graph.build()
+        vertices = {v.q: v for v in self.graph.vertices}
+        edges = {(e.a.q, e.b.q): e for e in self.graph.edges}
+
+        self.operation.apply(g, self.graph)
+
+        for e in edges.values():
+            if (e.v0, e.v1) not in edges:
+                raise NonAutomorphism()
+
+        for v in vertices.values():
+            make_set(v)
+
+        while vertices:
+            to_delete = []
+
+            for p, v in vertices.items():
+                union(v, vertices[v.q])
+
+                if p == v.q:
+                    if self._contradiction(v):
+                        return 0
+                    to_delete.append(p)
+
+            for p in to_delete:
+                del vertices[p]
+
+            self.operation.apply(g, self.graph)
+
+        s = set(find(v) for v in self.graph.vertices)
+        return self.colors ** len(s)
 
 
 class EdgeColoring(Structure):
@@ -52,23 +100,23 @@ class EdgeColoring(Structure):
         return e.c != 0
 
     def fixed_point_count(self, g):
-        x = self.graph.build()
-        edges = list(x.values())
+        self.graph.build()
+        edges = {(e.a.q, e.b.q): e for e in self.graph.edges}
 
-        self.operation.apply(g, edges)
+        self.operation.apply(g, self.graph)
 
-        for e in edges:
-            if (e.v0, e.v1) not in x:
+        for e in edges.values():
+            if (e.v0, e.v1) not in edges:
                 raise NonAutomorphism()
 
-        for e in edges:
+        for e in edges.values():
             make_set(e)
 
-        while x:
+        while edges:
             to_delete = []
 
-            for p, e in x.items():
-                union(e, x[e.v0, e.v1])
+            for p, e in edges.items():
+                union(e, edges[e.v0, e.v1])
 
                 if p[0] == e.v0 and p[1] == e.v1:
                     if self._contradiction(e):
@@ -76,11 +124,11 @@ class EdgeColoring(Structure):
                     to_delete.append(p)
 
             for p in to_delete:
-                del x[p]
+                del edges[p]
 
-            self.operation.apply(g, x.values())
+            self.operation.apply(g, self.graph)
 
-        s = set(find(e) for e in edges)
+        s = set(find(e) for e in self.graph.edges)
         return self.colors ** len(s)
 
 
@@ -94,4 +142,4 @@ class EdgeOrientation(EdgeColoring):
     def _contradiction(self, e):
         if super()._contradiction(e):
             return True
-        return e.a > e.b
+        return e.a.q > e.b.q

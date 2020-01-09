@@ -46,6 +46,21 @@ class BurnsideTests(unittest.TestCase):
         for n, a_n in enumerate([1, 1, 5, 18, 173]):
             self.assertEqual(EdgeOrientation(Biclique(n), VertexPermutation(n, n) * EdgeReversal()).orbit_count(), a_n)
 
+    def test_necklaces(self):
+        # https://oeis.org/A000031
+        for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 14, 20, 36, 60, 108, 188, 352, 632, 1182, 2192]):
+            self.assertEqual(VertexColoring(Cycle(n), VertexCycle(n)).orbit_count(), a_n)
+
+    def test_bracelets(self):
+        # https://oeis.org/A000029
+        for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 13, 18, 30, 46, 78, 126, 224, 380, 687, 1224]):
+            self.assertEqual(VertexColoring(Cycle(n), VertexCycle(n) * Reflection(n), colors=2).orbit_count(), a_n)
+
+    def test_bracelets_with_n_colors(self):
+        # https://oeis.org/A081721
+        for n, a_n in enumerate([1, 1, 3, 10, 55, 377, 4291, 60028, 1058058, 21552969, 500280022]):
+            self.assertEqual(VertexColoring(Cycle(n), VertexCycle(n) * Reflection(n), colors=n).orbit_count(), a_n)
+
 
 if __name__ == '__main__':
     unittest.main()
