@@ -17,7 +17,7 @@ Usage
 from burnside import *
 
 for n in range(2, 8):
-    c = EdgeColoring(Clique(n)).orbit_count()
+    c = Structure(Clique(n), VertexPermutation(n), edge_colors=2).orbit_count()
     print("There are {} different graphs on {} unlabeled nodes.".format(c, n))
 ```
 
