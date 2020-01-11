@@ -88,5 +88,4 @@ class Structure:
         if a == b == 0:
             return 1
 
-        assert a % b == 0
         return a // b
