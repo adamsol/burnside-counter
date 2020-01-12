@@ -11,9 +11,12 @@ class PolynomialTests(unittest.TestCase):
         n = Variable('n')
 
         self.assertEqual(k, k)
+        self.assertEqual(k, 'k')
+        self.assertEqual(Variable(''), '')
         self.assertNotEqual(k, 5)
         self.assertNotEqual(0, k)
         self.assertNotEqual(k, n)
+        self.assertNotEqual(k, 'K')
 
         self.assertEqual(str(k), 'k')
 
@@ -104,6 +107,17 @@ class PolynomialTests(unittest.TestCase):
         self.assertEqual(x.substitute({x: y}), y)
         self.assertEqual((x**6 + y**2).substitute({y: x**3}), 2*x**6)
         self.assertEqual((x**2 - y**2 - y).substitute({y: 1 - x}), 3*x - 2)
+
+        self.assertEqual(x.extract(1), 1)
+        self.assertEqual(x.extract(2), 0)
+        self.assertEqual(x.extract(0), 0)
+        self.assertEqual((3*x**5).extract(5), 3)
+        self.assertEqual((y**2).extract(1), 0)
+        self.assertEqual((10*y**0).extract(0), 10)
+        self.assertEqual((7*y**2*x**3 - 8*x**2*y**3).extract(2, 3), -8)
+        self.assertEqual((2*x + 3*x**2 + 2*y).extract(lambda vars: vars[x] == 2), 3)
+        self.assertEqual((x*y - y).extract(lambda vars: vars['x'] == vars['y'] == 1), 1)
+        self.assertEqual((x*y - 2*y).extract(lambda vars: vars[y] == 1), -1)
 
         self.assertEqual(str(x - x), '0')
         self.assertEqual(str(x**0 + 2), '3')
@@ -205,13 +219,35 @@ class CountingTests(unittest.TestCase):
         for n in range(20):
             self.assertEqual(Structure(Clique(n), vertex_colors=a, edge_colors=b).orbit_count(), a**n * b**(n*(n-1)//2))
 
-    def test_wheel_graph(self):
+    def test_wheel_graphs_with_k_colors(self):
         k = Variable('k')
         self.assertEqual(Structure(Wheel(6), VertexCycle(6) * Reflection(6), vertex_colors=k, edge_direction=True).orbit_count(), (1024*k**7 + 96*k**5 + 16*k**4 + 8*k**3 + 2*k**2) // 3)
 
     def test_cycle_index(self):
         self.assertEqual(str(Structure(Clique(3), VertexPermutation(3), vertex_colors=2).cycle_index()), '(v_1^3 + 3 v_1 v_2 + 2 v_3) / 6')
         self.assertEqual(str(Structure(Clique(4), VertexPermutation(4), edge_colors=2).cycle_index()), '(e_1^6 + 9 e_1^2 e_2^2 + 6 e_2 e_4 + 8 e_3^2) / 24')
+
+    def test_generating_function(self):
+        self.assertEqual(str(Structure(Clique(3), VertexPermutation(3), vertex_colors=2).generating_function(full=True)), 'x^3 + x^2 y + x y^2 + y^3')
+        self.assertEqual(str(Structure(Clique(4), VertexPermutation(4), edge_colors=2).generating_function()), 'a^6 + a^5 + 2 a^4 + 3 a^3 + 2 a^2 + a + 1')
+        self.assertEqual(str(Structure(Clique(1), vertex_colors=4).generating_function(full=True)), 'w + x + y + z')
+
+    def test_3x4_matrices_with_two_colors(self):
+        # Each color has to be used exactly 6 times.
+        self.assertEqual(Structure(Biclique(3, 4), VertexPermutation(3) * VertexCycle(1, 1, 1, 4), edge_colors=2).generating_function().extract(6), 48)
+
+    def test_2x3_matrices_with_three_symbols(self):
+        # Each symbol has to be used at least once.
+        self.assertEqual(Structure(Biclique(2, 3), VertexPermutation(2, 3), edge_colors=3).generating_function(full=True).extract(lambda vars: len(vars) == 3), 56)
+
+    def test_congruence_on_six_variables(self):
+        # Solutions of x_1 + x_2 + ... x_6 = 0 (mod 3), 0 <= x_i <= 2.
+        self.assertEqual(Structure(Cycle(6), VertexCycle(6), vertex_colors=3).generating_function(color_names='210').extract(lambda vars: (2*vars['2'] + vars['1']) % 3 == 0), 46)
+
+    def test_rooted_plane_trees(self):
+        # https://oeis.org/A003239
+        for n, a_n in enumerate([1, 1, 2, 4, 10, 26, 80, 246, 810, 2704, 9252, 32066, 112720, 400024, 1432860, 5170604]):
+            self.assertEqual(Structure(Cycle(n*2), VertexCycle(n*2), vertex_colors=2).generating_function().extract(n), a_n)
 
 
 if __name__ == '__main__':

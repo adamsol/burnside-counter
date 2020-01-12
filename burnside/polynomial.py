@@ -1,6 +1,7 @@
 
 import math
 import operator
+from collections import defaultdict
 from functools import reduce, total_ordering
 from itertools import chain
 
@@ -53,6 +54,8 @@ class Variable:
     def __eq__(self, other):
         if isinstance(other, int):
             return False
+        if isinstance(other, str):
+            return self.name == other
         if isinstance(other, Variable):
             return self.name == other.name
         if isinstance(other, (Term, Polynomial)):
@@ -81,13 +84,18 @@ class Variable:
     def substitute(self, variables):
         return Term(1, {self: 1}).substitute(variables)
 
+    def extract(self, *exponents):
+        return Term(1, {self: 1}).extract(*exponents)
+
 
 @total_ordering
 class Term:
 
-    def __init__(self, coef=1, vars={}):
+    def __init__(self, coef=1, vars=None):
         self.coef = coef
-        self.vars = vars.copy() if coef else {}
+        self.vars = defaultdict(lambda: 0)
+        if coef and vars:
+            self.vars.update(vars)
 
     def __add__(self, other):
         if isinstance(other, int):
@@ -130,7 +138,6 @@ class Term:
         if isinstance(other, Term):
             vars = self.vars.copy()
             for var, exp in other.vars.items():
-                vars.setdefault(var, 0)
                 vars[var] += exp
             return Term(self.coef*other.coef, vars)
         if isinstance(other, Polynomial):
@@ -188,6 +195,9 @@ class Term:
 
     def substitute(self, variables):
         return Polynomial(self).substitute(variables)
+
+    def extract(self, *exponents):
+        return Polynomial(self).extract(*exponents)
 
 
 class Polynomial:
@@ -325,3 +335,17 @@ class Polynomial:
                 part *= (variables[var] if var in variables else var) ** exp
             result += part
         return result // self.denominator
+
+    def extract(self, *args):
+        if not args or args == (0,):
+            f = lambda vars: not vars
+        elif callable(args[0]):
+            f = args[0]
+        else:
+            f = lambda vars: vars and list(zip(*sorted(vars.items())))[1] == args
+
+        result = 0
+        for term in self.terms.values():
+            if f(term.vars):
+                result += term.coef
+        return result

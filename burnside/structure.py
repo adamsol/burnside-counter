@@ -116,3 +116,22 @@ class Structure:
             **{var: self.vertex_colors for var in self.vertex_variables},
             **{var: self.edge_colors * (2 if self.edge_direction else 1) for var in self.edge_variables},
         })
+
+    def generating_function(self, full=False, color_names=None):
+        if color_names is None:
+            vertex_color_names = [chr(ord('x') + i if i < 3 else ord('z') - i) for i in range(26)]
+            edge_color_names = [chr(ord('a') + i) for i in range(26)]
+        else:
+            vertex_color_names = edge_color_names = color_names
+
+        vertex_color_variables = [Variable(vertex_color_names[i]) for i in range(self.vertex_colors)]
+        if not full and vertex_color_variables:
+            vertex_color_variables[-1] = 1
+        edge_color_variables = [Variable(edge_color_names[i]) for i in range(self.edge_colors * (2 if self.edge_direction else 1))]
+        if not full and edge_color_variables:
+            edge_color_variables[-1] = 1
+
+        return self.cycle_index().substitute({
+            **{var: sum(color ** i for color in vertex_color_variables) for i, var in enumerate(self.vertex_variables) if i > 0},
+            **{var: sum(color ** i for color in edge_color_variables) for i, var in enumerate(self.edge_variables) if i > 0},
+        })
