@@ -78,6 +78,9 @@ class Variable:
     def __repr__(self):
         return str(self)
 
+    def substitute(self, variables):
+        return Term(1, {self: 1}).substitute(variables)
+
 
 @total_ordering
 class Term:
@@ -182,6 +185,9 @@ class Term:
 
     def __repr__(self):
         return str(self)
+
+    def substitute(self, variables):
+        return Polynomial(self).substitute(variables)
 
 
 class Polynomial:
@@ -310,3 +316,12 @@ class Polynomial:
 
     def __repr__(self):
         return str(self)
+
+    def substitute(self, variables):
+        result = Polynomial()
+        for term in self.terms.values():
+            part = Polynomial(Term(term.coef))
+            for var, exp in term.vars.items():
+                part *= (variables[var] if var in variables else var) ** exp
+            result += part
+        return result // self.denominator

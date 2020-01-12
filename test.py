@@ -101,6 +101,10 @@ class PolynomialTests(unittest.TestCase):
         self.assertNotEqual(x + y, (x + y) // 2)
         self.assertRaises(ZeroDivisionError, lambda: (x + y) // 0)
 
+        self.assertEqual(x.substitute({x: y}), y)
+        self.assertEqual((x**6 + y**2).substitute({y: x**3}), 2*x**6)
+        self.assertEqual((x**2 - y**2 - y).substitute({y: 1 - x}), 3*x - 2)
+
         self.assertEqual(str(x - x), '0')
         self.assertEqual(str(x**0 + 2), '3')
         self.assertEqual(str(y + 7 - y - 8), '-1')
@@ -113,10 +117,10 @@ class PolynomialTests(unittest.TestCase):
         self.assertEqual(str((x**2 + z) // 1), 'x^2 + z')
         self.assertEqual(str((4*x**2 - 6*y) // 8), '(2 x^2 - 3 y) / 4')
         self.assertEqual(str((3*x // 2) ** 2 - 6*x**2 // 8), '3 x^2 / 2')
+        self.assertEqual(str((x // 7 + x**0).substitute({x: 7*z**2 + 21*x - 7*y})), '3 x - y + z^2 + 1')
 
 
-
-class BurnsideTests(unittest.TestCase):
+class CountingTests(unittest.TestCase):
 
     def test_labeled_graphs(self):
         # http://oeis.org/A006125
@@ -204,6 +208,10 @@ class BurnsideTests(unittest.TestCase):
     def test_wheel_graph(self):
         k = Variable('k')
         self.assertEqual(Structure(Wheel(6), VertexCycle(6) * Reflection(6), vertex_colors=k, edge_direction=True).orbit_count(), (1024*k**7 + 96*k**5 + 16*k**4 + 8*k**3 + 2*k**2) // 3)
+
+    def test_cycle_index(self):
+        self.assertEqual(str(Structure(Clique(3), VertexPermutation(3), vertex_colors=2).cycle_index()), '(v_1^3 + 3 v_1 v_2 + 2 v_3) / 6')
+        self.assertEqual(str(Structure(Clique(4), VertexPermutation(4), edge_colors=2).cycle_index()), '(e_1^6 + 9 e_1^2 e_2^2 + 6 e_2 e_4 + 8 e_3^2) / 24')
 
 
 if __name__ == '__main__':
