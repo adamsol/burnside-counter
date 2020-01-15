@@ -191,10 +191,20 @@ class CountingTests(unittest.TestCase):
         for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 14, 20, 36, 60, 108, 188, 352, 632, 1182, 2192]):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n), vertex_colors=2).orbit_count(), a_n)
 
+    def test_complementary_necklaces(self):
+        # https://oeis.org/A000013
+        for n, a_n in enumerate([1, 1, 2, 2, 4, 4, 8, 10, 20, 30, 56, 94, 180, 316, 596, 1096, 2068]):
+            self.assertEqual(Structure(Cycle(n), VertexCycle(n) * VertexColorSwap(), vertex_colors=2).orbit_count(), a_n)
+
     def test_bracelets(self):
         # https://oeis.org/A000029
         for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 13, 18, 30, 46, 78, 126, 224, 380, 687, 1224]):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n) * Reflection(n), vertex_colors=2).orbit_count(), a_n)
+
+    def test_complementary_bracelets(self):
+        # https://oeis.org/A000011
+        for n, a_n in enumerate([1, 1, 2, 2, 4, 4, 8, 9, 18, 23, 44, 63, 122, 190, 362, 612]):
+            self.assertEqual(Structure(Cycle(n), VertexCycle(n) * Reflection(n) * VertexColorSwap(), vertex_colors=2).orbit_count(), a_n)
 
     def test_bracelets_with_n_colors(self):
         # https://oeis.org/A081721
@@ -226,11 +236,13 @@ class CountingTests(unittest.TestCase):
     def test_cycle_index(self):
         self.assertEqual(str(Structure(Clique(3), VertexPermutation(3), vertex_colors=2).cycle_index()), '(v_1^3 + 3 v_1 v_2 + 2 v_3) / 6')
         self.assertEqual(str(Structure(Clique(4), VertexPermutation(4), edge_colors=2).cycle_index()), '(e_1^6 + 9 e_1^2 e_2^2 + 6 e_2 e_4 + 8 e_3^2) / 24')
+        self.assertEqual(str(Structure(Tetrahedron(), Identity(), face_colors=2).cycle_index()), 'f_1^4')
 
     def test_generating_function(self):
         self.assertEqual(str(Structure(Clique(3), VertexPermutation(3), vertex_colors=2).generating_function(full=True)), 'x^3 + x^2 y + x y^2 + y^3')
         self.assertEqual(str(Structure(Clique(4), VertexPermutation(4), edge_colors=2).generating_function()), 'a^6 + a^5 + 2 a^4 + 3 a^3 + 2 a^2 + a + 1')
-        self.assertEqual(str(Structure(Clique(1), vertex_colors=4).generating_function(full=True)), 'w + x + y + z')
+        self.assertEqual(str(Structure(Node(), vertex_colors=4).generating_function(full=True)), 'w + x + y + z')
+        self.assertEqual(str(Structure(Cube(), Identity(), face_colors=2).generating_function()), 'A^6 + 6 A^5 + 15 A^4 + 20 A^3 + 15 A^2 + 6 A + 1')
 
     def test_3x4_matrices_with_two_colors(self):
         # Each color has to be used exactly 6 times.
@@ -248,6 +260,36 @@ class CountingTests(unittest.TestCase):
         # https://oeis.org/A003239
         for n, a_n in enumerate([1, 1, 2, 4, 10, 26, 80, 246, 810, 2704, 9252, 32066, 112720, 400024, 1432860, 5170604]):
             self.assertEqual(Structure(Cycle(n*2), VertexCycle(n*2), vertex_colors=2).generating_function().extract(n), a_n)
+
+    def test_tetrahedral_symmetry(self):
+        # https://oeis.org/A006008
+        for n, a_n in enumerate([0, 1, 5, 15, 36, 75, 141, 245, 400, 621, 925, 1331, 1860, 2535, 3381, 4425]):
+            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(), face_colors=n).orbit_count(), a_n)
+            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(), vertex_colors=n).orbit_count(), a_n)
+
+    def test_tetrahedral_symmetry_with_reflections(self):
+        # https://oeis.org/A000332
+        for n in range(50):
+            a_n = n * (n+1) * (n+2) * (n+3) // 24
+            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(reflections=True), face_colors=n).orbit_count(), a_n)
+            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(reflections=True), vertex_colors=n).orbit_count(), a_n)
+
+    def test_octahedral_symmetry(self):
+        # https://oeis.org/A047780
+        for n, a_n in enumerate([0, 1, 10, 57, 240, 800, 2226, 5390, 11712, 23355, 43450, 76351, 127920, 205842, 319970, 482700]):
+            self.assertEqual(Structure(Cube(), CubeSymmetry(), face_colors=n).orbit_count(), a_n)
+            self.assertEqual(Structure(Octahedron(), OctahedronSymmetry(), vertex_colors=n).orbit_count(), a_n)
+
+    def test_octahedral_symmetry_with_reflections(self):
+        # https://oeis.org/A198833
+        for n, a_n in enumerate([0, 1, 10, 56, 220, 680, 1771, 4060, 8436, 16215, 29260, 50116, 82160, 129766, 198485, 295240]):
+            self.assertEqual(Structure(Cube(), CubeSymmetry(reflections=True), face_colors=n).orbit_count(), a_n)
+            self.assertEqual(Structure(Octahedron(), OctahedronSymmetry(reflections=True), vertex_colors=n).orbit_count(), a_n)
+
+    def test_complementary_face_colorings(self):
+        self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry() * FaceColorSwap(), face_colors=2).orbit_count(), 3)
+        self.assertEqual(Structure(Cube(), CubeSymmetry() * FaceColorSwap(), face_colors=2).orbit_count(), 6)
+        self.assertEqual(Structure(Octahedron(), OctahedronSymmetry() * FaceColorSwap(), face_colors=2).orbit_count(), 15)
 
 
 if __name__ == '__main__':

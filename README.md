@@ -32,6 +32,9 @@ print(triangle.generating_function())
 
 # Number of necklaces with 8 beads: 3 white and 5 black. 
 print(Structure(Cycle(8), VertexCycle(8), vertex_colors=2).generating_function().extract(3))
+
+# Number of ways to color faces of a cube using exactly 3 colors (each color has to be used at least once).
+print(Structure(Cube(), CubeSymmetry(), face_colors=3).generating_function(full=True).extract(lambda vars: len(vars) == 3))
 ```
 
 See ``test.py`` for more examples.

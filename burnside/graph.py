@@ -2,19 +2,20 @@
 from abc import ABC, abstractmethod
 
 __all__ = [
-    'Edge', 'Graph', 'Clique', 'Empty', 'Node', 'Cycle', 'Join', 'Biclique', 'Star', 'Wheel',
+    'Vertex', 'Edge', 'Face', 'Graph',
+    'Clique', 'Empty', 'Node', 'Cycle', 'Join', 'Biclique', 'Star', 'Wheel',
+    'Tetrahedron', 'Cube', 'Octahedron',
 ]
 
 
 class Vertex:
 
-    def __init__(self, q):
-        self.q = q
+    def __init__(self, p):
+        self.p = p
         self.c = 0
 
     def translate(self, offset):
-        self.q += offset
-        return self
+        self.p += offset
 
     def change(self):
         self.c = 1 - self.c
@@ -27,21 +28,26 @@ class Edge:
         self.b = b
         self.c = 0
 
-    def translate(self, offset):
-        self.a.translate(offset)
-        self.b.translate(offset)
-        return self
-
     @property
-    def v0(self):
-        return min(self.a.q, self.b.q)
-
-    @property
-    def v1(self):
-        return max(self.a.q, self.b.q)
+    def p(self):
+        return frozenset({self.a.p, self.b.p})
 
     def reverse(self):
         self.a, self.b = self.b, self.a
+
+    def change(self):
+        self.c = 1 - self.c
+
+
+class Face:
+
+    def __init__(self, *vertices):
+        self.vertices = vertices
+        self.c = 0
+
+    @property
+    def p(self):
+        return frozenset(v.p for v in self.vertices)
 
     def change(self):
         self.c = 1 - self.c
@@ -51,13 +57,13 @@ class Graph(ABC):
 
     def __init__(self, size):
         self.size = size
-        self.vertices = None
-        self.edges = None
+        self.vertices = []
+        self.edges = []
+        self.faces = []
 
     @abstractmethod
     def build(self):
         self.vertices = [Vertex(x) for x in range(self.size)]
-        self.edges = []
 
 
 class Clique(Graph):
@@ -133,3 +139,36 @@ class Wheel(Join):
 
     def __init__(self, order):
         super().__init__(Cycle(order), Node())
+
+
+class Tetrahedron(Graph):
+
+    def __init__(self):
+        super().__init__(4)
+
+    def build(self):
+        super().build()
+        self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]]
+        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c]) for a, b, c in [(0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)]]
+
+
+class Cube(Graph):
+
+    def __init__(self):
+        super().__init__(8)
+
+    def build(self):
+        super().build()
+        self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 3), (0, 4), (1, 2), (1, 5), (2, 3), (2, 6), (3, 7), (4, 5), (4, 7), (5, 6), (6, 7)]]
+        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c], self.vertices[d]) for a, b, c, d in [(0, 1, 2, 3), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7), (4, 5, 6, 7)]]
+
+
+class Octahedron(Graph):
+
+    def __init__(self):
+        super().__init__(6)
+
+    def build(self):
+        super().build()
+        self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (1, 5), (2, 3), (2, 5), (3, 4), (3, 5), (4, 5)]]
+        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c]) for a, b, c in [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 1), (5, 1, 2), (5, 2, 3), (5, 3, 4), (5, 4, 1)]]

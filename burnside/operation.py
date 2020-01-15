@@ -4,7 +4,10 @@ from abc import abstractmethod, ABC
 from .group import S, Z, Product
 
 __all__ = [
-    'Operation', 'ComplexOperation', 'Identity', 'EdgeColorSwap', 'EdgeReversal', 'VertexPermutation', 'VertexCycle', 'Reflection',
+    'Operation', 'ComplexOperation',
+    'Identity', 'VertexColorSwap', 'EdgeColorSwap', 'EdgeReversal', 'FaceColorSwap',
+    'VertexPermutation', 'VertexCycle', 'Reflection',
+    'TetrahedronSymmetry', 'CubeSymmetry', 'OctahedronSymmetry',
 ]
 
 
@@ -46,6 +49,18 @@ class Identity(Operation):
         pass
 
 
+class VertexColorSwap(Operation):
+
+    def __init__(self):
+        super().__init__(Z(2))
+
+    def apply(self, g, x):
+        if not g:
+            return
+        for v in x.vertices:
+            v.change()
+
+
 class EdgeColorSwap(Operation):
 
     def __init__(self):
@@ -70,6 +85,18 @@ class EdgeReversal(Operation):
             e.reverse()
 
 
+class FaceColorSwap(Operation):
+
+    def __init__(self):
+        super().__init__(Z(2))
+
+    def apply(self, g, x):
+        if not g:
+            return
+        for f in x.faces:
+            f.change()
+
+
 class VertexPermutation(Operation):
 
     def __init__(self, *sizes):
@@ -80,8 +107,8 @@ class VertexPermutation(Operation):
         for p in g:
             k2 = k + len(p)
             for v in x.vertices:
-                if k <= v.q < k2:
-                    v.q = p[v.q - k] + k
+                if k <= v.p < k2:
+                    v.p = p[v.p - k] + k
             k = k2
 
 
@@ -96,8 +123,8 @@ class VertexCycle(Operation):
         for size, p in zip(self.sizes, g):
             k2 = k + size
             for v in x.vertices:
-                if k <= v.q < k2:
-                    v.q = (v.q - k + p) % size + k
+                if k <= v.p < k2:
+                    v.p = (v.p - k + p) % size + k
             k = k2
 
 
@@ -111,5 +138,79 @@ class Reflection(Operation):
         if not g:
             return
         for v in x.vertices:
-            if v.q < self.size:
-                v.q = self.size - v.q - 1
+            if v.p < self.size:
+                v.p = self.size - v.p - 1
+
+
+class TetrahedronSymmetry(Operation):
+
+    X = [1, 3, 2, 0]
+    Y = [1, 2, 0, 3]
+    PERMUTATIONS = [
+        [], [X], [Y],
+        [X, X], [X, Y], [Y, X], [Y, Y],
+        [X, X, Y], [X, Y, Y], [Y, X, X], [Y, Y, X],
+        [X, Y, Y, X],
+    ]
+
+    def __init__(self, reflections=False):
+        size = 12 * (2 if reflections else 1)
+        super().__init__(Z(size))
+
+    def apply(self, g, x):
+        for v in x.vertices:
+            for p in self.PERMUTATIONS[g % 12]:
+                v.p = p[v.p]
+            if g >= 12 and v.p in {0, 1}:
+                v.p = 1 - v.p
+
+
+class CubeSymmetry(Operation):
+
+    # https://www.euclideanspace.com/maths/discrete/groups/categorise/finite/cube/index.htm
+    X = [1, 2, 3, 0, 5, 6, 7, 4]
+    Y = [4, 0, 3, 7, 5, 1, 2, 6]
+    PERMUTATIONS = [
+        [], [X], [Y], [X, X],
+        [X, Y], [Y, X], [Y, Y], [X, X, X],
+        [X, X, Y], [X, Y, X], [X, Y, Y], [Y, X, X],
+        [Y, Y, X], [Y, Y, Y], [X, X, X, Y], [X, X, Y, X],
+        [X, X, Y, Y], [X, Y, X, X], [X, Y, Y, Y], [Y, X, X, X],
+        [Y, Y, Y, X], [X, X, X, Y, X], [X, Y, X, X, X], [X, Y, Y, Y, X],
+    ]
+
+    def __init__(self, reflections=False):
+        size = 24 * (2 if reflections else 1)
+        super().__init__(Z(size))
+
+    def apply(self, g, x):
+        for v in x.vertices:
+            for p in self.PERMUTATIONS[g % 24]:
+                v.p = p[v.p]
+            if g >= 24:
+                v.p = (v.p + 4) % 8
+
+
+class OctahedronSymmetry(Operation):
+
+    X = [0, 2, 3, 4, 1, 5]
+    Y = [4, 1, 0, 3, 5, 2]
+    PERMUTATIONS = [
+        [], [X], [Y], [X, X],
+        [X, Y], [Y, X], [Y, Y], [X, X, X],
+        [X, X, Y], [X, Y, X], [X, Y, Y], [Y, X, X],
+        [Y, Y, X], [Y, Y, Y], [X, X, X, Y], [X, X, Y, X],
+        [X, X, Y, Y], [X, Y, X, X], [X, Y, Y, Y], [Y, X, X, X],
+        [Y, Y, Y, X], [X, X, X, Y, X], [X, Y, X, X, X], [X, Y, Y, Y, X],
+    ]
+
+    def __init__(self, reflections=False):
+        size = 24 * (2 if reflections else 1)
+        super().__init__(Z(size))
+
+    def apply(self, g, x):
+        for v in x.vertices:
+            for p in self.PERMUTATIONS[g % 24]:
+                v.p = p[v.p]
+            if g >= 24 and v.p in {0, 5}:
+                v.p = 5 - v.p
