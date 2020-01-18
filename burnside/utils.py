@@ -73,7 +73,7 @@ def _permutation_type(partition):
 
 def permutation_types(n):
     if n < 1:
-        yield [], 1
+        yield _permutation_type([])
         return
     a = [0 for _ in range(n+1)]
     k = 1

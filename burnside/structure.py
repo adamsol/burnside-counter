@@ -5,7 +5,7 @@ from functools import reduce
 
 from .operation import Identity
 from .polynomial import Polynomial, Term, Variable
-from .utils import make_set, union, find
+from .utils import fact, permutation_types, make_set, union, find
 
 __all__ = [
     'Structure',
@@ -62,8 +62,6 @@ class Structure:
                 union(v, vertices[v.p])
 
                 if p == v.p:
-                    if v.c != 0:
-                        return 0
                     vertices_to_delete.append(p)
 
             for p in vertices_to_delete:
@@ -76,8 +74,6 @@ class Structure:
                 union(e, edges[e.p])
 
                 if p == e.p:
-                    if e.c != 0:
-                        return 0
                     if self.edge_direction and e.a.p > e.b.p:
                         return 0
                     edges_to_delete.append(p)
@@ -92,8 +88,6 @@ class Structure:
                 union(f, faces[f.p])
 
                 if p == f.p:
-                    if f.c != 0:
-                        return 0
                     faces_to_delete.append(p)
 
             for p in faces_to_delete:
@@ -134,12 +128,23 @@ class Structure:
 
         return a // b
 
-    def orbit_count(self):
-        return self.cycle_index().substitute({
-            **{var: self.vertex_colors for var in self.vertex_variables},
-            **{var: self.edge_colors * (2 if self.edge_direction else 1) for var in self.edge_variables},
-            **{var: self.face_colors for var in self.face_variables},
-        })
+    def orbit_count(self, permutable_colors=False):
+        result = self.cycle_index()
+
+        for variables, color_count in [
+            (self.vertex_variables, self.vertex_colors),
+            (self.edge_variables, self.edge_colors * (2 if self.edge_direction else 1)),  # FIXME: edge direction won't work properly with permutable colors
+            (self.face_variables, self.face_colors),
+        ]:
+            if permutable_colors:
+                tmp = 0
+                for p, k in permutation_types(color_count):
+                    tmp += result.substitute({var: sum(c * m for c, m in p.items() if i % c == 0) for i, var in enumerate(variables)}) * k
+                result = tmp // fact[color_count]
+            else:
+                result = result.substitute({var: color_count for var in variables})
+            
+        return result
 
     def generating_function(self, full=False, color_names=None):
         if color_names is None:
@@ -159,6 +164,7 @@ class Structure:
         if not full and face_color_variables:
             face_color_variables[-1] = 1
 
+        # TODO: handle permutable colors like in orbit_count
         return self.cycle_index().substitute({
             **{var: sum(color ** i for color in vertex_color_variables) for i, var in enumerate(self.vertex_variables) if i > 0},
             **{var: sum(color ** i for color in edge_color_variables) for i, var in enumerate(self.edge_variables) if i > 0},

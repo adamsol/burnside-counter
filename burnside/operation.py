@@ -5,7 +5,7 @@ from .group import S, Z, Product
 
 __all__ = [
     'Operation', 'ComplexOperation',
-    'Identity', 'VertexColorSwap', 'EdgeColorSwap', 'EdgeReversal', 'FaceColorSwap',
+    'Identity', 'EdgeReversal',
     'VertexPermutation', 'VertexCycle', 'Reflection',
     'TetrahedronSymmetry', 'CubeSymmetry', 'OctahedronSymmetry',
 ]
@@ -49,30 +49,6 @@ class Identity(Operation):
         pass
 
 
-class VertexColorSwap(Operation):
-
-    def __init__(self):
-        super().__init__(Z(2))
-
-    def apply(self, g, x):
-        if not g:
-            return
-        for v in x.vertices:
-            v.change()
-
-
-class EdgeColorSwap(Operation):
-
-    def __init__(self):
-        super().__init__(Z(2))
-
-    def apply(self, g, x):
-        if not g:
-            return
-        for e in x.edges:
-            e.change()
-
-
 class EdgeReversal(Operation):
 
     def __init__(self):
@@ -83,18 +59,6 @@ class EdgeReversal(Operation):
             return
         for e in x.edges:
             e.reverse()
-
-
-class FaceColorSwap(Operation):
-
-    def __init__(self):
-        super().__init__(Z(2))
-
-    def apply(self, g, x):
-        if not g:
-            return
-        for f in x.faces:
-            f.change()
 
 
 class VertexPermutation(Operation):

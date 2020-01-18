@@ -277,7 +277,7 @@ class Polynomial:
                 if other < 0:
                     gcd *= -1
                 denominator = other // gcd
-                return Polynomial(*[term // gcd for term in self.terms.values()], denominator=denominator)
+                return Polynomial(*[term // gcd for term in self.terms.values()], denominator=(denominator*self.denominator))
             raise ZeroDivisionError()
         raise TypeError()
 

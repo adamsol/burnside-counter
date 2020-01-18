@@ -12,13 +12,9 @@ class Vertex:
 
     def __init__(self, p):
         self.p = p
-        self.c = 0
 
     def translate(self, offset):
         self.p += offset
-
-    def change(self):
-        self.c = 1 - self.c
 
 
 class Edge:
@@ -26,7 +22,6 @@ class Edge:
     def __init__(self, a, b):
         self.a = a
         self.b = b
-        self.c = 0
 
     @property
     def p(self):
@@ -35,22 +30,15 @@ class Edge:
     def reverse(self):
         self.a, self.b = self.b, self.a
 
-    def change(self):
-        self.c = 1 - self.c
-
 
 class Face:
 
     def __init__(self, *vertices):
         self.vertices = vertices
-        self.c = 0
 
     @property
     def p(self):
         return frozenset(v.p for v in self.vertices)
-
-    def change(self):
-        self.c = 1 - self.c
 
 
 class Graph(ABC):
@@ -172,3 +160,6 @@ class Octahedron(Graph):
         super().build()
         self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (1, 5), (2, 3), (2, 5), (3, 4), (3, 5), (4, 5)]]
         self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c]) for a, b, c in [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 1), (5, 1, 2), (5, 2, 3), (5, 3, 4), (5, 4, 1)]]
+
+
+# TODO: dodecahedron and icosahedron
