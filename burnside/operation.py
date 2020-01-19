@@ -7,6 +7,7 @@ __all__ = [
     'Operation', 'ComplexOperation',
     'Identity', 'EdgeReversal',
     'VertexPermutation', 'VertexCycle', 'Reflection',
+    'GridRotation', 'GridReflection',
     'TetrahedronSymmetry', 'CubeSymmetry', 'OctahedronSymmetry',
 ]
 
@@ -104,6 +105,31 @@ class Reflection(Operation):
         for v in x.vertices:
             if v.p < self.size:
                 v.p = self.size - v.p - 1
+
+
+class GridRotation(Operation):
+
+    def __init__(self):
+        super().__init__(Z(4))
+
+    def apply(self, g, x):
+        for i in range(g):
+            for v in x.vertices:
+                row = v.p // x.width
+                col = v.p % x.width
+                v.p = col * x.width + (x.width - 1 - row)
+
+
+class GridReflection(Operation):
+
+    def __init__(self):
+        super().__init__(Z(2))
+
+    def apply(self, g, x):
+        if not g:
+            return
+        for v in x.vertices:
+            v.p = v.p // x.width * x.width + (x.width - 1 - v.p % x.width)
 
 
 class TetrahedronSymmetry(Operation):

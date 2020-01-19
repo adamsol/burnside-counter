@@ -304,6 +304,21 @@ class CountingTests(unittest.TestCase):
         for n, a_n in enumerate([1, 1, 2, 3, 5, 6, 9]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n), vertex_colors=4).orbit_count(permutable_colors=True), a_n)
 
+    def test_binary_grids(self):
+        # http://oeis.org/A047937
+        for n, a_n in enumerate([1, 2, 6, 140, 16456, 8390720, 17179934976, 140737496748032, 4611686019501162496]):
+            self.assertEqual(Structure(Grid(n), GridRotation(), vertex_colors=2).orbit_count(), a_n)
+
+    def test_grids_with_interchangeable_colors(self):
+        # http://oeis.org/A264787
+        for n, a_n in enumerate([1, 1, 7, 2966, 1310397193, 579823814813639193]):
+            self.assertEqual(Structure(Grid(n), GridRotation() * GridReflection(), vertex_colors=n*n).orbit_count(permutable_colors=True), a_n)
+
+    def test_grids_with_n_fields_selected(self):
+        # http://oeis.org/A019318
+        for n, a_n in enumerate([1, 1, 2, 16, 252, 6814, 244344, 10746377, 553319048]):
+            self.assertEqual(Structure(Grid(n), GridRotation() * GridReflection(), vertex_colors=2).generating_function().extract(n), a_n)
+
 
 if __name__ == '__main__':
     unittest.main()

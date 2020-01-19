@@ -1,9 +1,9 @@
 
-from abc import ABC, abstractmethod
-
 __all__ = [
     'Vertex', 'Edge', 'Face', 'Graph',
-    'Clique', 'Empty', 'Node', 'Cycle', 'Join', 'Biclique', 'Star', 'Wheel',
+    'Clique', 'Empty', 'Node', 'Cycle',
+    'Join', 'Biclique', 'Star', 'Wheel',
+    'Grid',
     'Tetrahedron', 'Cube', 'Octahedron',
 ]
 
@@ -41,7 +41,7 @@ class Face:
         return frozenset(v.p for v in self.vertices)
 
 
-class Graph(ABC):
+class Graph:
 
     def __init__(self, size):
         self.size = size
@@ -49,7 +49,6 @@ class Graph(ABC):
         self.edges = []
         self.faces = []
 
-    @abstractmethod
     def build(self):
         self.vertices = [Vertex(x) for x in range(self.size)]
 
@@ -68,9 +67,6 @@ class Empty(Graph):
 
     def __init__(self, size):
         super().__init__(size)
-
-    def build(self):
-        super().build()
 
 
 class Node(Empty):
@@ -127,6 +123,16 @@ class Wheel(Join):
 
     def __init__(self, order):
         super().__init__(Cycle(order), Node())
+
+
+class Grid(Graph):
+
+    def __init__(self, width, height=None):
+        if height is None:
+            height = width
+        super().__init__(width*height)
+        self.width = width
+        self.height = height
 
 
 class Tetrahedron(Graph):
