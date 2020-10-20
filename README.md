@@ -15,7 +15,7 @@ Requirements
 Usage
 -----
 
-```
+``` python
 from burnside import *
 
 for n in range(2, 8):
