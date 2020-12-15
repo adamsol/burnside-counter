@@ -1,6 +1,11 @@
 
 from collections import defaultdict
 
+__all__ = [
+    'gcd', 'fact', 'ffact', 'choose', 'power',
+    'permutation_types', 'DisjointSets',
+]
+
 N = 100
 
 
@@ -69,13 +74,13 @@ def _permutation_type(partition):
     for i in p:
         x *= ffact[l, i*p[i]] // power[i, p[i]] // fact[p[i]]
         l -= i*p[i]
-    return partition, x  # cycle type, number of permutations
+    return partition, x  # cycle lengths, number of permutations
 
 def permutation_types(n):
     if n < 1:
         yield _permutation_type([])
         return
-    a = [0 for _ in range(n+1)]
+    a = [0] * (n+1)
     k = 1
     y = n - 1
     while k != 0:
@@ -89,37 +94,40 @@ def permutation_types(n):
         while x <= y:
             a[k] = x
             a[l] = y
-            b = a[:k+2]
-            yield _permutation_type(b)
+            yield _permutation_type(a[:k+2])
             x += 1
             y -= 1
         a[k] = x + y
         y = x + y - 1
-        b = a[:k+1]
-        yield _permutation_type(b)
+        yield _permutation_type(a[:k+1])
 
 
 # Union-Find (disjoint set forests)
 # http://code.activestate.com/recipes/577225-union-find/
 
-def make_set(x):
-    x.parent = x
-    x.rank = 0
+class DisjointSets:
 
-def union(x, y):
-    xRoot = find(x)
-    yRoot = find(y)
-    if xRoot.rank > yRoot.rank:
-        yRoot.parent = xRoot
-    elif xRoot.rank < yRoot.rank:
-        xRoot.parent = yRoot
-    elif xRoot != yRoot:
-        yRoot.parent = xRoot
-        xRoot.rank = xRoot.rank+1
+    @staticmethod
+    def make_set(x):
+        x.djs_parent = x
+        x.djs_rank = 0
 
-def find(x):
-    if x.parent == x:
-        return x
-    else:
-        x.parent = find(x.parent)
-        return x.parent
+    @staticmethod
+    def union(x, y):
+        x_root = DisjointSets.find(x)
+        y_root = DisjointSets.find(y)
+        if x_root.djs_rank > y_root.djs_rank:
+            y_root.djs_parent = x_root
+        elif x_root.djs_rank < y_root.djs_rank:
+            x_root.djs_parent = y_root
+        elif x_root != y_root:
+            y_root.djs_parent = x_root
+            x_root.djs_rank = x_root.djs_rank + 1
+
+    @staticmethod
+    def find(x):
+        if x.djs_parent == x:
+            return x
+        else:
+            x.djs_parent = DisjointSets.find(x.djs_parent)
+            return x.djs_parent

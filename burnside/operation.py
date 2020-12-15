@@ -13,7 +13,6 @@ __all__ = [
 
 
 class Operation(ABC):
-
     def __init__(self, group):
         self.group = group
 
@@ -31,7 +30,6 @@ class Operation(ABC):
 
 
 class ComplexOperation(Operation):
-
     def __init__(self, *operations):
         super().__init__(Product(*[operation.group for operation in operations]))
         self.operations = operations
@@ -42,7 +40,6 @@ class ComplexOperation(Operation):
 
 
 class Identity(Operation):
-
     def __init__(self):
         super().__init__(Z(1))
 
@@ -51,7 +48,6 @@ class Identity(Operation):
 
 
 class EdgeReversal(Operation):
-
     def __init__(self):
         super().__init__(Z(2))
 
@@ -63,7 +59,6 @@ class EdgeReversal(Operation):
 
 
 class VertexPermutation(Operation):
-
     def __init__(self, *sizes):
         super().__init__(Product(*[S(size) for size in sizes]))
 
@@ -84,7 +79,6 @@ class VertexPermutation(Operation):
 
 
 class VertexCycle(Operation):
-
     def __init__(self, *sizes):
         super().__init__(Product(*[Z(size) for size in sizes]))
         self.sizes = sizes
@@ -100,7 +94,6 @@ class VertexCycle(Operation):
 
 
 class Reflection(Operation):
-
     def __init__(self, size):
         super().__init__(Z(2))
         self.size = size
@@ -114,7 +107,6 @@ class Reflection(Operation):
 
 
 class GridRotation(Operation):
-
     def __init__(self):
         super().__init__(Z(4))
 
@@ -127,7 +119,6 @@ class GridRotation(Operation):
 
 
 class GridReflection(Operation):
-
     def __init__(self):
         super().__init__(Z(2))
 
@@ -139,7 +130,6 @@ class GridReflection(Operation):
 
 
 class TetrahedronSymmetry(Operation):
-
     X = [1, 3, 2, 0]
     Y = [1, 2, 0, 3]
     PERMUTATIONS = [
@@ -162,7 +152,6 @@ class TetrahedronSymmetry(Operation):
 
 
 class CubeSymmetry(Operation):
-
     # https://www.euclideanspace.com/maths/discrete/groups/categorise/finite/cube/index.htm
     X = [1, 2, 3, 0, 5, 6, 7, 4]
     Y = [4, 0, 3, 7, 5, 1, 2, 6]
@@ -188,7 +177,6 @@ class CubeSymmetry(Operation):
 
 
 class OctahedronSymmetry(Operation):
-
     X = [0, 2, 3, 4, 1, 5]
     Y = [4, 1, 0, 3, 5, 2]
     PERMUTATIONS = [

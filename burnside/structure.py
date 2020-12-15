@@ -5,7 +5,7 @@ from functools import reduce
 
 from .operation import Identity
 from .polynomial import Polynomial, Term, Variable
-from .utils import fact, permutation_types, make_set, union, find
+from .utils import fact, permutation_types, DisjointSets
 
 __all__ = [
     'Structure',
@@ -17,7 +17,6 @@ class NonAutomorphism(Exception):
 
 
 class Structure:
-
     def __init__(self, graph, operation=Identity(), vertex_colors=1, edge_colors=1, edge_direction=False, face_colors=1):
         self.graph = graph
         self.operation = operation
@@ -46,20 +45,20 @@ class Structure:
 
         for v in vertices.values():
             v.cycle_length = 0
-            make_set(v)
+            DisjointSets.make_set(v)
         for e in edges.values():
             e.cycle_length = 0
-            make_set(e)
+            DisjointSets.make_set(e)
         for f in faces.values():
             f.cycle_length = 0
-            make_set(f)
+            DisjointSets.make_set(f)
 
         while vertices or edges or faces:
             vertices_to_delete = []
 
             for p, v in vertices.items():
                 v.cycle_length += 1
-                union(v, vertices[v.p])
+                DisjointSets.union(v, vertices[v.p])
 
                 if p == v.p:
                     vertices_to_delete.append(p)
@@ -71,7 +70,7 @@ class Structure:
 
             for p, e in edges.items():
                 e.cycle_length += 1
-                union(e, edges[e.p])
+                DisjointSets.union(e, edges[e.p])
 
                 if p == e.p:
                     if self.edge_direction and e.a.p > e.b.p:
@@ -85,7 +84,7 @@ class Structure:
 
             for p, f in faces.items():
                 f.cycle_length += 1
-                union(f, faces[f.p])
+                DisjointSets.union(f, faces[f.p])
 
                 if p == f.p:
                     faces_to_delete.append(p)
@@ -95,11 +94,11 @@ class Structure:
 
             self.operation.apply(g, self.graph)
 
-        vertex_cycles = set(find(v) for v in self.graph.vertices)
+        vertex_cycles = set(DisjointSets.find(v) for v in self.graph.vertices)
         vertex_cycle_lengths = Counter(v.cycle_length for v in vertex_cycles)
-        edge_cycles = set(find(e) for e in self.graph.edges)
+        edge_cycles = set(DisjointSets.find(e) for e in self.graph.edges)
         edge_cycle_lengths = Counter(e.cycle_length for e in edge_cycles)
-        face_cycles = set(find(f) for f in self.graph.faces)
+        face_cycles = set(DisjointSets.find(f) for f in self.graph.faces)
         face_cycle_lengths = Counter(f.cycle_length for f in face_cycles)
 
         result = 1

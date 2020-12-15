@@ -1,11 +1,21 @@
 #!/usr/bin/env python
 
+import time
 import unittest
 
 from burnside import *
 
 
-class PolynomialTests(unittest.TestCase):
+class TestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.start_time = time.time()
+
+    def tearDown(self):
+        print('\n{:.3f}s {}.{} '.format(time.time() - self.start_time, type(self).__name__, self._testMethodName), end='')
+
+
+class PolynomialTests(TestCase):
 
     def test_variables(self):
         k = Variable('k')
@@ -138,99 +148,99 @@ class PolynomialTests(unittest.TestCase):
         self.assertEqual(str((x // 7 + x**0).substitute({x: 7*z**2 + 21*x - 7*y})), '3 x - y + z^2 + 1')
 
 
-class CountingTests(unittest.TestCase):
+class CountingTests(TestCase):
 
     def test_labeled_graphs(self):
         # http://oeis.org/A006125
-        for n in range(100):
+        for n in range(20):
             self.assertEqual(Structure(Clique(n), edge_colors=2).orbit_count(), 2**(n*(n-1)//2))
 
     def test_unlabeled_graphs(self):
         # http://oeis.org/A000088
-        for n, a_n in enumerate([1, 1, 2, 4, 11, 34, 156]):
+        for n, a_n in enumerate([1, 1, 2, 4, 11, 34, 156, 1044, 12346, 274668]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n), edge_colors=2).orbit_count(), a_n)
 
     def test_complementary_unlabeled_graphs(self):
         # http://oeis.org/A007869
-        for n, a_n in enumerate([1, 1, 1, 2, 6, 18, 78]):
+        for n, a_n in enumerate([1, 1, 1, 2, 6, 18, 78, 522, 6178, 137352]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n), edge_colors=2).orbit_count(permutable_colors=True), a_n)
 
     def test_symmetric_relations(self):
         # http://oeis.org/A000666
-        for n, a_n in enumerate([1, 2, 6, 20, 90, 544, 5096]):
+        for n, a_n in enumerate([1, 2, 6, 20, 90, 544, 5096, 79264, 2208612, 113743760]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n), vertex_colors=2, edge_colors=2).orbit_count(), a_n)
 
     def test_multigraphs_on_five_nodes(self):
         # http://oeis.org/A063843
-        for n, a_n in enumerate([0, 1, 34, 792, 10688, 90005, 533358, 2437848, 9156288, 29522961, 84293770]):
+        for n, a_n in enumerate([0, 1, 34, 792, 10688, 90005, 533358, 2437848, 9156288, 29522961]):
             self.assertEqual(Structure(Clique(5), VertexPermutation(5), edge_colors=n).orbit_count(), a_n)
 
     def test_unlabeled_tournaments(self):
         # http://oeis.org/A000568
-        for n, a_n in enumerate([1, 1, 1, 2, 4, 12, 56, 456]):
+        for n, a_n in enumerate([1, 1, 1, 2, 4, 12, 56, 456, 6880, 191536]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n), edge_direction=True).orbit_count(), a_n)
 
     def test_unlabeled_tournaments_with_signed_nodes(self):
         # http://oeis.org/A093934
-        for n, a_n in enumerate([1, 2, 4, 12, 48, 296, 3040]):
+        for n, a_n in enumerate([1, 2, 4, 12, 48, 296, 3040, 54256, 1716608, 97213472]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n), vertex_colors=2, edge_direction=True).orbit_count(), a_n)
 
     def test_complementary_unlabeled_tournaments(self):
         # http://oeis.org/A059735
-        for n, a_n in enumerate([1, 1, 1, 2, 3, 10, 34]):
+        for n, a_n in enumerate([1, 1, 1, 2, 3, 10, 34, 272, 3528, 97144]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n) * EdgeReversal(), edge_direction=True).orbit_count(), a_n)
 
     @unittest.expectedFailure  # FIXME
     def test_bicliques(self):
         # http://oeis.org/A007139
-        for n, a_n in enumerate([1, 2, 6, 26, 192]):
+        for n, a_n in enumerate([1, 2, 6, 26, 192, 3014]):
             self.assertEqual(Structure(Biclique(n), VertexPermutation(n, n) * Reflection(2*n), edge_colors=2).orbit_count(), a_n)
 
     def test_matrices_with_two_symbols(self):
         # http://oeis.org/A091059
-        for n, a_n in enumerate([1, 1, 5, 18, 173]):
+        for n, a_n in enumerate([1, 1, 5, 18, 173, 2812]):
             self.assertEqual(Structure(Biclique(n), VertexPermutation(n, n) * EdgeReversal(), edge_direction=True).orbit_count(), a_n)
 
     def test_matrices_with_five_symbols(self):
         # http://oeis.org/A091062
-        for n, a_n in enumerate([1, 1, 9, 649, 2283123]):
+        for n, a_n in enumerate([1, 1, 9, 649, 2283123, 173636442196]):
             self.assertEqual(Structure(Biclique(n), VertexPermutation(n, n), edge_colors=5).orbit_count(permutable_colors=True), a_n)
 
     def test_necklaces(self):
         # https://oeis.org/A000031
-        for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 14, 20, 36, 60, 108, 188, 352, 632, 1182, 2192]):
+        for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 14, 20, 36, 60]):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n), vertex_colors=2).orbit_count(), a_n)
 
     def test_complementary_necklaces(self):
         # https://oeis.org/A000013
-        for n, a_n in enumerate([1, 1, 2, 2, 4, 4, 8, 10, 20, 30, 56, 94, 180, 316, 596, 1096, 2068]):
+        for n, a_n in enumerate([1, 1, 2, 2, 4, 4, 8, 10, 20, 30]):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n), vertex_colors=2).orbit_count(permutable_colors=True), a_n)
 
     def test_bracelets(self):
         # https://oeis.org/A000029
-        for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 13, 18, 30, 46, 78, 126, 224, 380, 687, 1224]):
+        for n, a_n in enumerate([1, 2, 3, 4, 6, 8, 13, 18, 30, 46]):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n) * Reflection(n), vertex_colors=2).orbit_count(), a_n)
 
     def test_complementary_bracelets(self):
         # https://oeis.org/A000011
-        for n, a_n in enumerate([1, 1, 2, 2, 4, 4, 8, 9, 18, 23, 44, 63, 122, 190, 362, 612]):
+        for n, a_n in enumerate([1, 1, 2, 2, 4, 4, 8, 9, 18, 23]):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n) * Reflection(n), vertex_colors=2).orbit_count(permutable_colors=True), a_n)
 
     def test_bracelets_with_n_colors(self):
         # https://oeis.org/A081721
-        for n, a_n in enumerate([1, 1, 3, 10, 55, 377, 4291, 60028, 1058058, 21552969, 500280022]):
+        for n, a_n in enumerate([1, 1, 3, 10, 55, 377, 4291, 60028, 1058058, 21552969]):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n) * Reflection(n), vertex_colors=n).orbit_count(), a_n)
 
     def test_0_vertex_colors(self):
-        for n, a_n in enumerate([1, 0, 0, 0, 0, 0]):
-            self.assertEqual(Structure(Clique(n), VertexPermutation(n), vertex_colors=0).orbit_count(), a_n)
+        for n in range(10):
+            self.assertEqual(Structure(Clique(n), VertexPermutation(n), vertex_colors=0).orbit_count(), int(n == 0))
 
     def test_0_edge_colors(self):
-        for n, a_n in enumerate([1, 1, 0, 0, 0, 0]):
-            self.assertEqual(Structure(Clique(n), VertexPermutation(n), edge_colors=0).orbit_count(), a_n)
+        for n in range(10):
+            self.assertEqual(Structure(Clique(n), VertexPermutation(n), edge_colors=0).orbit_count(), int(n <= 1))
 
     def test_1_color(self):
-        for n in range(20):
+        for n in range(10):
             self.assertEqual(Structure(Cycle(n), VertexCycle(n)).orbit_count(), 1)
 
     def test_parameterized_number_of_colors(self):
@@ -238,10 +248,6 @@ class CountingTests(unittest.TestCase):
         b = Variable('b')
         for n in range(20):
             self.assertEqual(Structure(Clique(n), vertex_colors=a, edge_colors=b).orbit_count(), a**n * b**(n*(n-1)//2))
-
-    def test_wheel_graphs_with_k_colors(self):
-        k = Variable('k')
-        self.assertEqual(Structure(Wheel(6), VertexCycle(6) * Reflection(6), vertex_colors=k, edge_direction=True).orbit_count(), (1024*k**7 + 96*k**5 + 16*k**4 + 8*k**3 + 2*k**2) // 3)
 
     def test_cycle_index(self):
         self.assertEqual(str(Structure(Clique(3), VertexPermutation(3), vertex_colors=2).cycle_index()), '(v_1^3 + 3 v_1 v_2 + 2 v_3) / 6')
@@ -254,72 +260,76 @@ class CountingTests(unittest.TestCase):
         self.assertEqual(str(Structure(Node(), vertex_colors=4).generating_function(full=True)), 'w + x + y + z')
         self.assertEqual(str(Structure(Cube(), Identity(), face_colors=2).generating_function()), 'A^6 + 6 A^5 + 15 A^4 + 20 A^3 + 15 A^2 + 6 A + 1')
 
-    def test_3x4_matrices_with_two_colors(self):
-        # Each color has to be used exactly 6 times.
-        self.assertEqual(Structure(Biclique(3, 4), VertexPermutation(3) * VertexCycle(1, 1, 1, 4), edge_colors=2).generating_function().extract(6), 48)
-
-    def test_2x3_matrices_with_three_symbols(self):
-        # Each symbol has to be used at least once.
-        self.assertEqual(Structure(Biclique(2, 3), VertexPermutation(2, 3), edge_colors=3).generating_function(full=True).extract(lambda vars: len(vars) == 3), 56)
-
-    def test_congruence_on_six_variables(self):
-        # Solutions of x_1 + x_2 + ... x_6 = 0 (mod 3), 0 <= x_i <= 2.
-        self.assertEqual(Structure(Cycle(6), VertexCycle(6), vertex_colors=3).generating_function(color_names='210').extract(lambda vars: (2*vars['2'] + vars['1']) % 3 == 0), 46)
-
     def test_rooted_plane_trees(self):
         # https://oeis.org/A003239
-        for n, a_n in enumerate([1, 1, 2, 4, 10, 26, 80, 246, 810, 2704, 9252, 32066, 112720, 400024, 1432860, 5170604]):
+        for n, a_n in enumerate([1, 1, 2, 4, 10, 26, 80, 246, 810, 2704]):
             self.assertEqual(Structure(Cycle(n*2), VertexCycle(n*2), vertex_colors=2).generating_function().extract(n), a_n)
 
     def test_tetrahedral_symmetry(self):
         # https://oeis.org/A006008
-        for n, a_n in enumerate([0, 1, 5, 15, 36, 75, 141, 245, 400, 621, 925, 1331, 1860, 2535, 3381, 4425]):
-            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(), face_colors=n).orbit_count(), a_n)
-            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(), vertex_colors=n).orbit_count(), a_n)
+        n = Variable('n')
+        formula = (n**4 + 11*n**2) // 12
+        self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(), face_colors=n).orbit_count(), formula)
+        self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(), vertex_colors=n).orbit_count(), formula)
 
     def test_tetrahedral_symmetry_with_reflections(self):
         # https://oeis.org/A000332
-        for n in range(50):
-            a_n = n * (n+1) * (n+2) * (n+3) // 24
-            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(reflections=True), face_colors=n).orbit_count(), a_n)
-            self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(reflections=True), vertex_colors=n).orbit_count(), a_n)
+        n = Variable('n')
+        formula = n * (n+1) * (n+2) * (n+3) // 24
+        self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(reflections=True), face_colors=n).orbit_count(), formula)
+        self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(reflections=True), vertex_colors=n).orbit_count(), formula)
 
     def test_octahedral_symmetry(self):
         # https://oeis.org/A047780
-        for n, a_n in enumerate([0, 1, 10, 57, 240, 800, 2226, 5390, 11712, 23355, 43450, 76351, 127920, 205842, 319970, 482700]):
-            self.assertEqual(Structure(Cube(), CubeSymmetry(), face_colors=n).orbit_count(), a_n)
-            self.assertEqual(Structure(Octahedron(), OctahedronSymmetry(), vertex_colors=n).orbit_count(), a_n)
+        n = Variable('n')
+        formula = (n**6 + 3*n**4 + 12*n**3 + 8*n**2) // 24
+        self.assertEqual(Structure(Cube(), CubeSymmetry(), face_colors=n).orbit_count(), formula)
+        self.assertEqual(Structure(Octahedron(), OctahedronSymmetry(), vertex_colors=n).orbit_count(), formula)
 
     def test_octahedral_symmetry_with_reflections(self):
         # https://oeis.org/A198833
-        for n, a_n in enumerate([0, 1, 10, 56, 220, 680, 1771, 4060, 8436, 16215, 29260, 50116, 82160, 129766, 198485, 295240]):
-            self.assertEqual(Structure(Cube(), CubeSymmetry(reflections=True), face_colors=n).orbit_count(), a_n)
-            self.assertEqual(Structure(Octahedron(), OctahedronSymmetry(reflections=True), vertex_colors=n).orbit_count(), a_n)
+        n = Variable('n')
+        formula = n * (n+1) * (n**2+n+2) * (n**2+n+4) // 48
+        self.assertEqual(Structure(Cube(), CubeSymmetry(reflections=True), face_colors=n).orbit_count(), formula)
+        self.assertEqual(Structure(Octahedron(), OctahedronSymmetry(reflections=True), vertex_colors=n).orbit_count(), formula)
 
     def test_complementary_face_colorings(self):
         self.assertEqual(Structure(Tetrahedron(), TetrahedronSymmetry(), face_colors=2).orbit_count(permutable_colors=True), 3)
         self.assertEqual(Structure(Cube(), CubeSymmetry(), face_colors=2).orbit_count(permutable_colors=True), 6)
         self.assertEqual(Structure(Octahedron(), OctahedronSymmetry(), face_colors=2).orbit_count(permutable_colors=True), 15)
 
-    def test_partitions(self):
+    def test_partitions_into_4_parts(self):
         # http://oeis.org/A001400
-        for n, a_n in enumerate([1, 1, 2, 3, 5, 6, 9]):
+        for n, a_n in enumerate([1, 1, 2, 3, 5, 6, 9, 11, 15, 18]):
             self.assertEqual(Structure(Clique(n), VertexPermutation(n), vertex_colors=4).orbit_count(permutable_colors=True), a_n)
 
     def test_binary_grids(self):
         # http://oeis.org/A047937
-        for n, a_n in enumerate([1, 2, 6, 140, 16456, 8390720, 17179934976, 140737496748032, 4611686019501162496]):
+        for n, a_n in enumerate([1, 2, 6, 140, 16456, 8390720, 17179934976, 140737496748032, 4611686019501162496, 604462909807864344215552]):
             self.assertEqual(Structure(Grid(n), GridRotation(), vertex_colors=2).orbit_count(), a_n)
 
     def test_grids_with_interchangeable_colors(self):
         # http://oeis.org/A264787
-        for n, a_n in enumerate([1, 1, 7, 2966, 1310397193, 579823814813639193]):
+        for n, a_n in enumerate([1, 1, 7, 2966, 1310397193]):
             self.assertEqual(Structure(Grid(n), GridRotation() * GridReflection(), vertex_colors=n*n).orbit_count(permutable_colors=True), a_n)
 
     def test_grids_with_n_fields_selected(self):
         # http://oeis.org/A019318
-        for n, a_n in enumerate([1, 1, 2, 16, 252, 6814, 244344, 10746377, 553319048]):
+        for n, a_n in enumerate([1, 1, 2, 16, 252, 6814, 244344, 10746377]):
             self.assertEqual(Structure(Grid(n), GridRotation() * GridReflection(), vertex_colors=2).generating_function().extract(n), a_n)
+
+    def test_exam_problems(self):
+        # 2014-09
+        self.assertEqual(Structure(Join(Cycle(5), Cycle(4)), VertexCycle(5, 4), vertex_colors=3).generating_function().extract(lambda vars: set(vars.values()) == {3}), 104)
+        # 2016-06
+        self.assertEqual(Structure(Biclique(3, 4), VertexPermutation(3) * VertexCycle(1, 1, 1, 4), edge_colors=2).generating_function().extract(6), 48)
+        # 2017-06
+        self.assertEqual(Structure(Biclique(2, 3), VertexPermutation(2, 3), edge_colors=3).generating_function(full=True).extract(lambda vars: len(vars) == 3), 56)
+        # 2017-09
+        self.assertEqual(Structure(Cycle(6), VertexCycle(6), vertex_colors=3).generating_function(color_names='210').extract(lambda vars: (2*vars['2'] + vars['1']) % 3 == 0), 46)
+        # 2018-06
+        k = Variable('k')
+        self.assertEqual(Structure(Wheel(6), VertexCycle(6) * Reflection(6), vertex_colors=k, edge_direction=True).orbit_count(), (1024*k**7 + 96*k**5 + 16*k**4 + 8*k**3 + 2*k**2) // 3)
 
 
 if __name__ == '__main__':

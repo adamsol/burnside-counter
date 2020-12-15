@@ -8,7 +8,6 @@ from .utils import permutation_types
 
 
 class Group(ABC):
-
     def __init__(self):
         pass
 

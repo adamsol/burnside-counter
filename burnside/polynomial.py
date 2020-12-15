@@ -10,7 +10,6 @@ __all__ = ['Variable']
 
 @total_ordering
 class Variable:
-
     def __init__(self, name):
         self.name = name
 
@@ -90,7 +89,6 @@ class Variable:
 
 @total_ordering
 class Term:
-
     def __init__(self, coef=1, vars=None):
         self.coef = coef
         self.vars = defaultdict(lambda: 0)
@@ -201,7 +199,6 @@ class Term:
 
 
 class Polynomial:
-
     def __init__(self, *terms, denominator=1):
         self.terms = {}
         for term in terms:

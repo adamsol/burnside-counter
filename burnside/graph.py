@@ -1,4 +1,6 @@
 
+from .group import S, Z, Product
+
 __all__ = [
     'Vertex', 'Edge', 'Face', 'Graph',
     'Clique', 'Empty', 'Node', 'Cycle',
@@ -9,7 +11,6 @@ __all__ = [
 
 
 class Vertex:
-
     def __init__(self, p):
         self.p = p
 
@@ -18,7 +19,6 @@ class Vertex:
 
 
 class Edge:
-
     def __init__(self, a, b):
         self.a = a
         self.b = b
@@ -32,7 +32,6 @@ class Edge:
 
 
 class Face:
-
     def __init__(self, *vertices):
         self.vertices = vertices
 
@@ -42,7 +41,6 @@ class Face:
 
 
 class Graph:
-
     def __init__(self, size):
         self.size = size
         self.vertices = []
@@ -54,7 +52,6 @@ class Graph:
 
 
 class Clique(Graph):
-
     def __init__(self, size):
         super().__init__(size)
 
@@ -64,19 +61,16 @@ class Clique(Graph):
 
 
 class Empty(Graph):
-
     def __init__(self, size):
         super().__init__(size)
 
 
 class Node(Empty):
-
     def __init__(self):
         super().__init__(1)
 
 
 class Cycle(Graph):
-
     def __init__(self, size):
         super().__init__(size)
 
@@ -88,14 +82,9 @@ class Cycle(Graph):
 
 
 class Join(Graph):
-
     def __init__(self, graph1, graph2):
         super().__init__(graph1.size + graph2.size)
         self.graphs = [graph1, graph2]
-
-    def _translate_vertices(self, vertices, offset):
-        for vertex in vertices:
-            vertex.translate(offset)
 
     def build(self):
         self.graphs[0].build()
@@ -108,25 +97,21 @@ class Join(Graph):
 
 
 class Biclique(Join):
-
     def __init__(self, size1, size2=None):
         super().__init__(Empty(size1), Empty(size2 if size2 is not None else size1))
 
 
 class Star(Join):
-
     def __init__(self, order):
         super().__init__(Empty(order), Node())
 
 
 class Wheel(Join):
-
     def __init__(self, order):
         super().__init__(Cycle(order), Node())
 
 
 class Grid(Graph):
-
     def __init__(self, width, height=None):
         if height is None:
             height = width
@@ -136,7 +121,6 @@ class Grid(Graph):
 
 
 class Tetrahedron(Graph):
-
     def __init__(self):
         super().__init__(4)
 
@@ -147,7 +131,6 @@ class Tetrahedron(Graph):
 
 
 class Cube(Graph):
-
     def __init__(self):
         super().__init__(8)
 
@@ -158,7 +141,6 @@ class Cube(Graph):
 
 
 class Octahedron(Graph):
-
     def __init__(self):
         super().__init__(6)
 
