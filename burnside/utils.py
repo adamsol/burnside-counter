@@ -69,7 +69,7 @@ def _permutation_type(partition):
     for i in p:
         x *= ffact[l, i*p[i]] // power[i, p[i]] // fact[p[i]]
         l -= i*p[i]
-    return p, x  # cycle type, number of permutations
+    return partition, x  # cycle type, number of permutations
 
 def permutation_types(n):
     if n < 1:

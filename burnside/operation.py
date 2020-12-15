@@ -70,10 +70,16 @@ class VertexPermutation(Operation):
     def apply(self, g, x):
         k = 0
         for p in g:
-            k2 = k + len(p)
+            permutation = []
+            s = 0
+            for c in p:
+                for i in range(c):
+                    permutation.append((i+1) % c + s)
+                s += c
+            k2 = k + len(permutation)
             for v in x.vertices:
                 if k <= v.p < k2:
-                    v.p = p[v.p - k] + k
+                    v.p = permutation[v.p - k] + k
             k = k2
 
 

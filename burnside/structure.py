@@ -115,13 +115,13 @@ class Structure:
         a = Polynomial(Term(0))
         b = 0
 
-        for g in self.operation:
+        for g, c in self.operation:
             try:
-                c = self._cycle_index_monomial(g)
+                m = self._cycle_index_monomial(g)
             except NonAutomorphism:
                 continue
-            a += c
-            b += 1
+            a += c * m
+            b += c
 
         if a == b == 0:
             return Polynomial(Term(1))
@@ -139,7 +139,7 @@ class Structure:
             if permutable_colors:
                 tmp = 0
                 for p, k in permutation_types(color_count):
-                    tmp += result.substitute({var: sum(c * m for c, m in p.items() if i % c == 0) for i, var in enumerate(variables)}) * k
+                    tmp += result.substitute({var: sum(c for c in p if i % c == 0) for i, var in enumerate(variables)}) * k
                 result = tmp // fact[color_count]
             else:
                 result = result.substitute({var: color_count for var in variables})

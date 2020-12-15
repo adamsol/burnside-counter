@@ -1,6 +1,10 @@
 
+import operator
 from abc import ABC, abstractmethod
-from itertools import permutations, product
+from functools import reduce
+from itertools import product
+
+from .utils import permutation_types
 
 
 class Group(ABC):
@@ -27,7 +31,7 @@ class Z(Group):
         self.order = order
 
     def __iter__(self):
-        return iter(range(self.order))
+        return product(range(self.order), [1])
 
 
 class S(Group):
@@ -39,7 +43,7 @@ class S(Group):
         self.order = order
 
     def __iter__(self):
-        return permutations(range(self.order))
+        return permutation_types(self.order)
 
 
 class Product(Group):
@@ -51,4 +55,6 @@ class Product(Group):
         self.groups = groups
 
     def __iter__(self):
-        return product(*self.groups)
+        for ts in product(*self.groups):  # ts = ((g1, c1), (g2, c2), ...)
+            gs, cs = zip(*ts)
+            yield gs, reduce(operator.mul, cs)
