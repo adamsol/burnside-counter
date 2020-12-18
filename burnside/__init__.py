@@ -1,5 +1,5 @@
 
 from .graph import *
-from .operation import *
+from .group import *
 from .polynomial import *
 from .structure import *

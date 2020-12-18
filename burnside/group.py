@@ -6,6 +6,10 @@ from itertools import product
 
 from .utils import permutation_types
 
+__all__ = [
+    'S', 'Z',
+]
+
 
 class Group(ABC):
     def __init__(self):

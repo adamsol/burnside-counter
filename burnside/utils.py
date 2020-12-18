@@ -3,7 +3,7 @@ from collections import defaultdict
 
 __all__ = [
     'gcd', 'fact', 'ffact', 'choose', 'power',
-    'permutation_types', 'DisjointSets',
+    'permutation_types', 'permutation_representative', 'DisjointSets',
 ]
 
 N = 100
@@ -100,6 +100,15 @@ def permutation_types(n):
         a[k] = x + y
         y = x + y - 1
         yield _permutation_type(a[:k+1])
+
+def permutation_representative(partition):
+    permutation = []
+    s = 0
+    for c in partition:
+        for i in range(c):
+            permutation.append((i+1) % c + s)
+        s += c
+    return permutation
 
 
 # Union-Find (disjoint set forests)

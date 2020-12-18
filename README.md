@@ -19,10 +19,10 @@ Usage
 from burnside import *
 
 for n in range(2, 8):
-    c = Structure(Clique(n), VertexPermutation(n), edge_colors=2).orbit_count()
+    c = Structure(Clique(n), edge_colors=2).orbit_count()
     print("There are {} different graphs on {} unlabeled nodes.".format(c, n))
     
-triangle = Structure(Clique(3), VertexPermutation(3), edge_colors=2)
+triangle = Structure(Clique(3), edge_colors=2)
 
 # Cycle index of K_3: (e_1^3 + 3 e_1 e_2 + 2 e_3) / 6.
 print(triangle.cycle_index())
@@ -30,11 +30,11 @@ print(triangle.cycle_index())
 # Generating function for the number of 3-vertex graphs with a given number of edges: a^3 + a^2 + a + 1.
 print(triangle.generating_function())
 
-# Number of necklaces with 8 beads: 3 white and 5 black. 
-print(Structure(Cycle(8), VertexCycle(8), vertex_colors=2).generating_function().extract(3))
+# Number of necklaces with 8 beads -- 3 white and 5 black.
+print(Structure(Cycle(8), vertex_colors=2).generating_function().extract(3))
 
 # Number of ways to color faces of a cube using exactly 3 colors (each color has to be used at least once).
-print(Structure(Cube(), CubeSymmetry(), face_colors=3).generating_function(full=True).extract(lambda vars: len(vars) == 3))
+print(Structure(Cube(), face_colors=3).generating_function(full=True).extract(lambda vars: len(vars) == 3))
 ```
 
 See ``test.py`` for more examples.

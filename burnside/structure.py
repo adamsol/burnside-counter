@@ -3,7 +3,7 @@ import operator
 from collections import Counter
 from functools import reduce
 
-from .operation import Identity
+from .group import Z
 from .polynomial import Polynomial, Term, Variable
 from .utils import fact, permutation_types, DisjointSets
 
@@ -12,18 +12,18 @@ __all__ = [
 ]
 
 
-class NonAutomorphism(Exception):
-    pass
-
-
 class Structure:
-    def __init__(self, graph, operation=Identity(), vertex_colors=1, edge_colors=1, edge_direction=False, face_colors=1):
+    def __init__(self, graph, *, labeled=False, edge_direction=False, edge_reversal=False, vertex_colors=1, edge_colors=1, face_colors=1):
         self.graph = graph
-        self.operation = operation
+        self.labeled = labeled
+
+        self.edge_direction = edge_direction
+        if edge_reversal and not edge_direction:
+            raise ValueError("Reversible edges require the graph to be directed (edge_direction=True).")
+        self.edge_reversal = edge_reversal
 
         self.vertex_colors = vertex_colors
         self.edge_colors = edge_colors
-        self.edge_direction = edge_direction
         self.face_colors = face_colors
 
         graph.build()
@@ -31,17 +31,11 @@ class Structure:
         self.edge_variables = [Variable('e_{}'.format(i)) for i in range(len(graph.edges) + 1)]
         self.face_variables = [Variable('f_{}'.format(i)) for i in range(len(graph.faces) + 1)]
 
-    def _cycle_index_monomial(self, g):
+    def _cycle_index_monomial(self, op=None):
         self.graph.build()
         vertices = {v.p: v for v in self.graph.vertices}
         edges = {e.p: e for e in self.graph.edges}
         faces = {f.p: f for f in self.graph.faces}
-
-        self.operation.apply(g, self.graph)
-
-        for e in edges.values():
-            if e.p not in edges:
-                raise NonAutomorphism()
 
         for v in vertices.values():
             v.cycle_length = 0
@@ -54,6 +48,8 @@ class Structure:
             DisjointSets.make_set(f)
 
         while vertices or edges or faces:
+            self._apply(op)
+
             vertices_to_delete = []
 
             for p, v in vertices.items():
@@ -92,8 +88,6 @@ class Structure:
             for p in faces_to_delete:
                 del faces[p]
 
-            self.operation.apply(g, self.graph)
-
         vertex_cycles = set(DisjointSets.find(v) for v in self.graph.vertices)
         vertex_cycle_lengths = Counter(v.cycle_length for v in vertex_cycles)
         edge_cycles = set(DisjointSets.find(e) for e in self.graph.edges)
@@ -110,17 +104,28 @@ class Structure:
             result *= reduce(operator.mul, (self.face_variables[length] ** count for length, count in face_cycle_lengths.items()), 1)
         return result
 
+    def _apply(self, op):
+        if op is None:
+            return
+        self.graph.apply(op[0])
+        if op[1]:
+            for e in self.graph.edges:
+                e.reverse()
+
+    def _operations(self):
+        return self.graph.operations() * Z(2 if self.edge_reversal else 1)
+
     def cycle_index(self):
         a = Polynomial(Term(0))
         b = 0
 
-        for g, c in self.operation:
-            try:
-                m = self._cycle_index_monomial(g)
-            except NonAutomorphism:
-                continue
-            a += c * m
-            b += c
+        if self.labeled:
+            a += self._cycle_index_monomial()
+            b = 1
+        else:
+            for op, c in self._operations():
+                a += c * self._cycle_index_monomial(op)
+                b += c
 
         if a == b == 0:
             return Polynomial(Term(1))
@@ -132,7 +137,7 @@ class Structure:
 
         for variables, color_count in [
             (self.vertex_variables, self.vertex_colors),
-            (self.edge_variables, self.edge_colors * (2 if self.edge_direction else 1)),  # FIXME: edge direction won't work properly with permutable colors
+            (self.edge_variables, self.edge_colors*(2 if self.edge_direction else 1)),  # FIXME: edge direction won't work properly with permutable colors
             (self.face_variables, self.face_colors),
         ]:
             if permutable_colors:
