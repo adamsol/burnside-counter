@@ -265,6 +265,11 @@ class CountingTests(TestCase):
         for n, a_n in enumerate([1, 1, 2, 4, 10, 26, 80, 246, 810, 2704]):
             self.assertEqual(Structure(Cycle(n*2), vertex_colors=2).generating_function().extract(n), a_n)
 
+    def test_prisms(self):
+        # https://oeis.org/A222187
+        for n, a_n in enumerate([13, 34, 78, 237, 687, 2299, 7685], 3):
+            self.assertEqual(Structure(Prism(n, reflection=True), vertex_colors=2).orbit_count(), a_n)
+
     def test_tetrahedral_symmetry(self):
         # https://oeis.org/A006008
         n = Variable('n')
@@ -319,6 +324,8 @@ class CountingTests(TestCase):
             self.assertEqual(Structure(Grid(n, reflection=True), vertex_colors=2).generating_function().extract(n), a_n)
 
     def test_exam_problems(self):
+        # 2013-06
+        self.assertEqual(Structure(Prism(3, reflection=True), vertex_colors=2, edge_colors=2).generating_function().extract(lambda vars: vars['x'] == 3 and vars['a'] == 5), 222)
         # 2014-09
         self.assertEqual(Structure(Join(Cycle(5), Cycle(4)), vertex_colors=3).generating_function().extract(lambda vars: set(vars.values()) == {3}), 104)
         # 2016-06

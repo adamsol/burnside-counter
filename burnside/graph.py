@@ -8,7 +8,7 @@ __all__ = [
     'Vertex', 'Edge', 'Face', 'Graph',
     'Node', 'Clique', 'Cycle',
     'Join', 'Biclique', 'Wheel',
-    'Grid',
+    'Grid', 'Prism',
     'Tetrahedron', 'Cube', 'Octahedron',
 ]
 
@@ -198,6 +198,41 @@ class Grid(Graph):
         if op[1]:
             for v in self.vertices:
                 v.update(lambda p: p // self.side * self.side + (self.side - 1 - p % self.side))
+
+
+class Prism(Graph):
+    def __init__(self, base, *, reflection=False, **kwargs):
+        super().__init__(base*2, **kwargs)
+        if base < 3:
+            raise ValueError("The base must have at least 3 vertices.")
+        self.base = base
+        self.reflection = reflection
+
+    def build(self):
+        super().build()
+        if self.empty:
+            return
+        self.edges = [
+            *(Edge(self.vertices[i], self.vertices[(i+1) % self.base]) for i in range(self.base)),
+            *(Edge(self.vertices[i + self.base], self.vertices[(i+1) % self.base + self.base]) for i in range(self.base)),
+            *(Edge(self.vertices[i], self.vertices[i + self.base]) for i in range(self.base)),
+        ]
+        self.faces = [
+            Face(*(self.vertices[i] for i in range(self.base))),
+            Face(*(self.vertices[i + self.base] for i in range(self.base))),
+            *(Face(self.vertices[i], self.vertices[(i+1) % self.base], self.vertices[(i+1) % self.base + self.base], self.vertices[i + self.base]) for i in range(self.base)),
+        ]
+
+    def operations(self):
+        return Z(self.base) * Z(2) * Z(2 if self.reflection else 1)
+
+    def apply(self, op):
+        for v in self.vertices:
+            v.update(lambda p: (p + op[0][0]) % self.base + p // self.base * self.base)
+            if op[0][1]:
+                v.update(lambda p: self.size - 1 - p)
+            if op[1]:
+                v.update(lambda p: self.base - 1 - p % self.base + p // self.base * self.base)
 
 
 class Tetrahedron(Graph):
