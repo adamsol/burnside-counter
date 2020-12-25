@@ -148,14 +148,26 @@ class Biclique(Join):
             raise ValueError("Reflection operation requires the parts to be of equal size.")
         self.reflection = reflection
 
+    def build(self):
+        super().build()
+        self._offset = self.vertices[0]._offset if self.vertices else 0
+
     def operations(self):
         return super().operations() * Z(2 if self.reflection else 1)
 
     def apply(self, op):
-        super().apply(op[0])
         if op[1]:
+            # https://math.stackexchange.com/a/1165824/
+            permutation = permutation_representative(op[0][0])
+            s = self.graphs[0].size
             for v in self.vertices:
-                v.update(lambda p: (p + self.graphs[0].size) % (self.graphs[0].size * 2))
+                if v.p < self._offset + s:
+                    v.translate(s)
+                else:
+                    v.update(lambda p: permutation[p])
+                    v.translate(-s)
+        else:
+            super().apply(op[0])
 
 
 class Wheel(Join):

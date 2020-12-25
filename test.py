@@ -191,7 +191,6 @@ class CountingTests(TestCase):
         for n, a_n in enumerate([1, 1, 1, 2, 3, 10, 34, 272, 3528, 97144]):
             self.assertEqual(Structure(Clique(n), edge_direction=True, edge_reversal=True).orbit_count(), a_n)
 
-    @unittest.expectedFailure  # FIXME
     def test_bicliques(self):
         # http://oeis.org/A007139
         for n, a_n in enumerate([1, 2, 6, 26, 192, 3014]):
