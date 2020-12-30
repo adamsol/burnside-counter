@@ -132,7 +132,7 @@ class Structure:
 
         return a // b
 
-    def orbit_count(self, permutable_colors=False):
+    def orbit_count(self, *, permutable_colors=False):
         result = self.cycle_index()
 
         for variables, color_count in [
@@ -150,7 +150,7 @@ class Structure:
             
         return result
 
-    def generating_function(self, full=False, color_names=None):
+    def generating_function(self, *, reduced=False, color_names=None):
         if color_names is None:
             vertex_color_names = [chr(ord('x') + i if i < 3 else ord('z') - i) for i in range(26)]
             edge_color_names = [chr(ord('a') + i) for i in range(26)]
@@ -159,13 +159,13 @@ class Structure:
             vertex_color_names = edge_color_names = face_color_names = color_names
 
         vertex_color_variables = [Variable(vertex_color_names[i]) for i in range(self.vertex_colors)]
-        if not full and vertex_color_variables:
+        if reduced and len(vertex_color_variables) == 2:
             vertex_color_variables[-1] = 1
         edge_color_variables = [Variable(edge_color_names[i]) for i in range(self.edge_colors * (2 if self.edge_direction else 1))]
-        if not full and edge_color_variables:
+        if reduced and len(edge_color_variables) == 2:
             edge_color_variables[-1] = 1
         face_color_variables = [Variable(face_color_names[i]) for i in range(self.face_colors)]
-        if not full and face_color_variables:
+        if reduced and len(face_color_variables) == 2:
             face_color_variables[-1] = 1
 
         # TODO: handle permutable colors like in orbit_count

@@ -2,6 +2,7 @@
 import math
 import operator
 from collections import defaultdict
+from copy import copy
 from functools import reduce, total_ordering
 from itertools import chain
 
@@ -333,16 +334,16 @@ class Polynomial:
             result += part
         return result // self.denominator
 
-    def extract(self, *args):
-        if not args or args == (0,):
+    def extract(self, exponent):
+        if callable(exponent):
+            f = exponent
+        elif exponent == 0:
             f = lambda vars: not vars
-        elif callable(args[0]):
-            f = args[0]
         else:
-            f = lambda vars: vars and list(zip(*sorted(vars.items())))[1] == args
+            f = lambda vars: len(vars) == 1 and next(iter(vars.values())) == exponent
 
         result = 0
         for term in self.terms.values():
-            if f(term.vars):
+            if f(copy(term.vars)):
                 result += term.coef
-        return result
+        return result // self.denominator
