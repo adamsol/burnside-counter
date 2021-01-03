@@ -140,3 +140,14 @@ class DisjointSets:
         else:
             x.djs_parent = DisjointSets.find(x.djs_parent)
             return x.djs_parent
+
+
+# https://stackoverflow.com/a/2912455/
+
+class KeyDefaultDict(defaultdict):
+    def __missing__(self, key):
+        if self.default_factory is None:
+            raise KeyError(key)
+        else:
+            result = self[key] = self.default_factory(key)
+            return result

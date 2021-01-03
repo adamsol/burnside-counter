@@ -18,23 +18,17 @@ Usage
 ``` python
 from burnside import *
 
-for n in range(2, 8):
-    c = Structure(Clique(n), edge_colors=2).orbit_count()
-    print("There are {} different graphs on {} unlabeled nodes.".format(c, n))
-    
-triangle = Structure(Clique(3), edge_colors=2)
+# Number of different unlabeled 4-vertex graphs (i.e. edge colorings of a 4-clique using 2 colors).
+print(Clique(4).orbit_count(edge_colors=2))
 
-# Cycle index of K_3: (e_1^3 + 3 e_1 e_2 + 2 e_3) / 6.
-print(triangle.cycle_index())
-
-# Generating function for the number of 3-vertex graphs with a given number of edges: a^3 + a^2 + a + 1.
-print(triangle.generating_function(reduced=True))
+# Generating function for the number of 4-vertex graphs with a given number of edges.
+print(Clique(4).generating_function(edge_colors=2))
 
 # Number of necklaces with 8 beads -- 3 white and 5 black.
-print(Structure(Cycle(8), vertex_colors=2).generating_function(reduced=True).extract(3))
+print(Cycle(8).generating_function(vertex_colors=2).extract(3))
 
 # Number of ways to color faces of a cube using exactly 3 colors (each color has to be used at least once).
-print(Structure(Cube(), face_colors=3).generating_function().extract(lambda vars: len(vars) == 3))
+print(Cube().generating_function(face_colors=3).extract(lambda vars: len(vars) == 3))
 ```
 
 See ``test.py`` for more examples.

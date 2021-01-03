@@ -1,8 +1,12 @@
 
+import operator
 from abc import ABC, abstractmethod
+from collections import Counter
+from functools import reduce
 
 from .group import S, Z
-from .utils import permutation_representative
+from .polynomial import Polynomial, Term, Variable
+from .utils import DisjointSets, fact, KeyDefaultDict, permutation_representative, permutation_types
 
 __all__ = [
     'Vertex', 'Edge', 'Face', 'Graph',
@@ -52,9 +56,15 @@ class Graph(ABC):
     def __init__(self, size, *, empty=False):
         self.size = size
         self.empty = empty
+        self.reset()
+
+    def reset(self):
         self.vertices = []
         self.edges = []
         self.faces = []
+        self.vertex_variables = KeyDefaultDict(lambda l: Variable('v_{}'.format(l)))
+        self.edge_variables = KeyDefaultDict(lambda l: Variable('e_{}'.format(l)))
+        self.face_variables = KeyDefaultDict(lambda l: Variable('f_{}'.format(l)))
 
     def build(self):
         self.vertices = [Vertex(x) for x in range(self.size)]
@@ -66,6 +76,136 @@ class Graph(ABC):
     @abstractmethod
     def apply(self, op):
         pass
+
+    def cycle_index_monomial(self, op=None, skip_vertices=False, skip_edges=False, skip_faces=False, edge_direction=False):
+        self.build()
+        vertices = {v.p: v for v in self.vertices}
+        edges = {e.p: e for e in self.edges}
+        faces = {f.p: f for f in self.faces}
+
+        for v in vertices.values():
+            v.cycle_length = 0
+            DisjointSets.make_set(v)
+        for e in edges.values():
+            e.cycle_length = 0
+            DisjointSets.make_set(e)
+        for f in faces.values():
+            f.cycle_length = 0
+            DisjointSets.make_set(f)
+
+        while vertices or edges or faces:
+            if op is not None:
+                self.apply(op[0])
+                if op[1]:
+                    for e in self.edges:
+                        e.reverse()
+
+            vertices_to_delete = []
+
+            for p, v in vertices.items():
+                v.cycle_length += 1
+                DisjointSets.union(v, vertices[v.p])
+
+                if p == v.p:
+                    vertices_to_delete.append(p)
+
+            for p in vertices_to_delete:
+                del vertices[p]
+
+            edges_to_delete = []
+
+            for p, e in edges.items():
+                e.cycle_length += 1
+                DisjointSets.union(e, edges[e.p])
+
+                if p == e.p:
+                    if edge_direction and e.a.p > e.b.p:
+                        return 0
+                    edges_to_delete.append(p)
+
+            for p in edges_to_delete:
+                del edges[p]
+
+            faces_to_delete = []
+
+            for p, f in faces.items():
+                f.cycle_length += 1
+                DisjointSets.union(f, faces[f.p])
+
+                if p == f.p:
+                    faces_to_delete.append(p)
+
+            for p in faces_to_delete:
+                del faces[p]
+
+        result = 1
+        # The `skip_*` variables are for optimization.
+        if not skip_vertices:
+            vertex_cycles = set(DisjointSets.find(v) for v in self.vertices)
+            vertex_cycle_lengths = Counter(v.cycle_length for v in vertex_cycles)
+            result *= reduce(operator.mul, (self.vertex_variables[length] ** count for length, count in vertex_cycle_lengths.items()), 1)
+        if not skip_edges:
+            edge_cycles = set(DisjointSets.find(e) for e in self.edges)
+            edge_cycle_lengths = Counter(e.cycle_length for e in edge_cycles)
+            result *= reduce(operator.mul, (self.edge_variables[length] ** count for length, count in edge_cycle_lengths.items()), 1)
+        if not skip_faces:
+            face_cycles = set(DisjointSets.find(f) for f in self.faces)
+            face_cycle_lengths = Counter(f.cycle_length for f in face_cycles)
+            result *= reduce(operator.mul, (self.face_variables[length] ** count for length, count in face_cycle_lengths.items()), 1)
+        return result
+
+    def cycle_index(self, *, reversible_edges=False, **kwargs):
+        self.reset()
+
+        a = Polynomial(Term(0))
+        b = 0
+
+        for op, c in self.operations() * Z(2 if reversible_edges else 1):
+            a += c * self.cycle_index_monomial(op, **kwargs)
+            b += c
+
+        if a == b == 0:
+            return Polynomial(Term(1))
+
+        return a // b
+
+    def orbit_count(self, *, vertex_colors=1, edge_colors=1, face_colors=1, permutable_colors=False, edge_direction=False, reversible_edges=False):
+        if edge_direction:
+            edge_colors *= 2
+
+        result = self.cycle_index(skip_vertices=(vertex_colors == 1), skip_edges=(edge_colors == 1), skip_faces=(face_colors == 1), edge_direction=edge_direction, reversible_edges=reversible_edges)
+
+        for variables, color_count in [
+            (self.vertex_variables, vertex_colors),
+            (self.edge_variables, edge_colors),  # FIXME: edge direction won't work properly with permutable colors
+            (self.face_variables, face_colors),
+        ]:
+            if permutable_colors:
+                tmp = 0
+                for p, k in permutation_types(color_count):
+                    tmp += result.substitute({var: sum(c for c in p if l % c == 0) for l, var in variables.items()}) * k
+                result = tmp // fact[color_count]
+            else:
+                result = result.substitute({var: color_count for var in variables.values()})
+
+        return result
+
+    def generating_function(self, *, vertex_colors=1, edge_colors=1, face_colors=1):
+        def color_variables(t):
+            colors, prefix = t
+            result = list(map(Variable, colors if isinstance(colors, (str, tuple, list)) else ['{}_{}'.format(prefix, chr(ord('a') + i)) for i in range(colors)]))
+            if 1 <= len(result) <= 2:
+                result[-1] = 1
+            return result
+
+        vertex_colors, edge_colors, face_colors = map(color_variables, zip([vertex_colors, edge_colors, face_colors], 'vef'))
+
+        # TODO: handle permutable colors like in orbit_count
+        return self.cycle_index(skip_vertices=(vertex_colors == 1), skip_edges=(edge_colors == 1), skip_faces=(face_colors == 1)).substitute({
+            **{var: sum(color ** l for color in vertex_colors) for l, var in self.vertex_variables.items()},
+            **{var: sum(color ** l for color in edge_colors) for l, var in self.edge_variables.items()},
+            **{var: sum(color ** l for color in face_colors) for l, var in self.face_variables.items()},
+        })
 
 
 class Clique(Graph):
