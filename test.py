@@ -184,6 +184,17 @@ class GraphTests(TestCase):
         b = Variable('b')
         self.assertEqual(Clique(2).orbit_count(vertex_colors=a, edge_colors=b), a*(a+1)//2 * b)
 
+    def test_permutable_colors(self):
+        graph = Clique(4)
+        self.assertEqual(graph.orbit_count(edge_colors=2), 11)
+        self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True), 6)
+        self.assertEqual(graph.orbit_count(edge_direction=True), 4)
+        self.assertEqual(graph.orbit_count(permutable_colors=True, edge_direction=True), 4)
+        self.assertEqual(graph.orbit_count(edge_direction=True, reversible_edges=True), 3)
+        self.assertEqual(graph.orbit_count(permutable_colors=True, edge_direction=True, reversible_edges=True), 3)
+        self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True), 88)
+        self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True, reversible_edges=True), 52)
+
     def test_unlabeled_graphs(self):
         # http://oeis.org/A000088
         for n, a_n in enumerate([1, 1, 2, 4, 11, 34, 156, 1044, 12346, 274668]):

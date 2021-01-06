@@ -170,20 +170,25 @@ class Graph(ABC):
         return a // b
 
     def orbit_count(self, *, vertex_colors=1, edge_colors=1, face_colors=1, permutable_colors=False, edge_direction=False, reversible_edges=False):
-        if edge_direction:
-            edge_colors *= 2
+        edge_color_count_multiplier = 2 if edge_direction else 1
+        edge_colors *= edge_color_count_multiplier
 
         result = self.cycle_index(skip_vertices=(vertex_colors == 1), skip_edges=(edge_colors == 1), skip_faces=(face_colors == 1), edge_direction=edge_direction, reversible_edges=reversible_edges)
 
-        for variables, color_count in [
-            (self.vertex_variables, vertex_colors),
-            (self.edge_variables, edge_colors),  # FIXME: edge direction won't work properly with permutable colors
-            (self.face_variables, face_colors),
+        for variables, color_count, color_count_multiplier in [
+            (self.vertex_variables, vertex_colors, 1),
+            (self.edge_variables, edge_colors, edge_color_count_multiplier),
+            (self.face_variables, face_colors, 1),
         ]:
             if permutable_colors:
                 tmp = 0
+                color_count //= color_count_multiplier
                 for p, k in permutation_types(color_count):
-                    tmp += result.substitute({var: sum(c for c in p if l % c == 0) for l, var in variables.items()}) * k
+                    # The number of ways to color one cycle of graph elements (of length `l`) under a given color permutation (`p`)
+                    # is the sum of color cycle lengths (`c`) that divide the length of the given cycle in the graph (`l`)
+                    # multiplied by the number of additional non-permutable colors (like edge direction).
+                    # https://math.stackexchange.com/a/834494/
+                    tmp += result.substitute({var: sum(c for c in p if l % c == 0) * color_count_multiplier for l, var in variables.items()}) * k
                 result = tmp // fact[color_count]
             else:
                 result = result.substitute({var: color_count for var in variables.values()})
