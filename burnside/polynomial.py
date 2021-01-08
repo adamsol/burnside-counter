@@ -186,7 +186,7 @@ class Term:
     def __str__(self):
         return '{}{}'.format(
             str(self.coef) if not self.vars else '' if self.coef == 1 else '-' if self.coef == -1 else '{} '.format(self.coef),
-            ' '.join('{}{}'.format(var, '^{}'.format(exp) if exp > 1 else '') for var, exp in sorted(self.vars.items())),
+            ' '.join('{}{}'.format(var, '^{}'.format(exp) if exp > 1 else '') for var, exp in sorted(self.vars.items()) if exp),
         ).strip()
 
     def __repr__(self):

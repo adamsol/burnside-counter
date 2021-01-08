@@ -164,26 +164,6 @@ class GraphTests(TestCase):
         self.assertEqual(str(Node().generating_function(vertex_colors='xyz')), 'x + y + z')
         self.assertEqual(str(Cube().generating_function(face_colors='AB')), 'A^6 + A^5 + 2 A^4 + 2 A^3 + 2 A^2 + A + 1')
 
-    def test_0_vertex_colors(self):
-        for n in range(5):
-            self.assertEqual(Cycle(n).orbit_count(vertex_colors=0), int(n == 0))
-            self.assertEqual(Clique(n).generating_function(vertex_colors=0), int(n == 0))
-
-    def test_0_edge_colors(self):
-        for n in range(5):
-            self.assertEqual(Cycle(n).orbit_count(edge_colors=0), int(n <= 1))
-            self.assertEqual(Clique(n).generating_function(edge_colors=0), int(n <= 1))
-
-    def test_1_color(self):
-        for n in range(5):
-            self.assertEqual(Cycle(n).orbit_count(), 1)
-            self.assertEqual(Clique(n).generating_function(), 1)
-
-    def test_parameterized_number_of_colors(self):
-        a = Variable('a')
-        b = Variable('b')
-        self.assertEqual(Clique(2).orbit_count(vertex_colors=a, edge_colors=b), a*(a+1)//2 * b)
-
     def test_permutable_colors(self):
         graph = Clique(4)
         self.assertEqual(graph.orbit_count(edge_colors=2), 11)
@@ -194,6 +174,40 @@ class GraphTests(TestCase):
         self.assertEqual(graph.orbit_count(permutable_colors=True, edge_direction=True, reversible_edges=True), 3)
         self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True), 88)
         self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True, reversible_edges=True), 52)
+
+    def test_generating_function_with_permutable_colors(self):
+        self.assertEqual(str(Clique(3).generating_function(vertex_colors=2, permutable_colors=True)), 'v_a^3 + v_a^2')
+        self.assertEqual(str(Clique(4).generating_function(edge_colors=2, permutable_colors=True)), 'e_a^6 + e_a^5 + 2 e_a^4 + 2 e_a^3')
+        self.assertEqual(str(Node().generating_function(vertex_colors=5, permutable_colors=True)), 'v_a')
+        self.assertEqual(str(Cube().generating_function(edge_colors='xy', permutable_colors=True)), 'x^12 + x^11 + 5 x^10 + 13 x^9 + 27 x^8 + 38 x^7 + 29 x^6')
+        self.assertEqual(Cube().generating_function(edge_colors=3, permutable_colors=True).extract(lambda vars: set(vars.values()) == {4}), 282)
+        self.assertEqual(Cube().generating_function(face_colors='rgb', permutable_colors=True).extract(lambda vars: vars['r'] == 4 and vars['g'] == 1), 2)
+
+    def test_0_vertex_colors(self):
+        for n in range(5):
+            self.assertEqual(Cycle(n).orbit_count(vertex_colors=0), int(n == 0))
+            self.assertEqual(Clique(n).orbit_count(vertex_colors=0, permutable_colors=True), int(n == 0))
+            self.assertEqual(Clique(n).generating_function(vertex_colors=0), int(n == 0))
+            self.assertEqual(Cycle(n).generating_function(vertex_colors=0, permutable_colors=True), int(n == 0))
+
+    def test_0_edge_colors(self):
+        for n in range(5):
+            self.assertEqual(Cycle(n).orbit_count(edge_colors=0), int(n <= 1))
+            self.assertEqual(Clique(n).orbit_count(edge_colors=0, permutable_colors=True), int(n <= 1))
+            self.assertEqual(Clique(n).generating_function(edge_colors=0), int(n <= 1))
+            self.assertEqual(Cycle(n).generating_function(edge_colors=0, permutable_colors=True), int(n <= 1))
+
+    def test_1_color(self):
+        for n in range(5):
+            self.assertEqual(Cycle(n).orbit_count(), 1)
+            self.assertEqual(Clique(n).orbit_count(permutable_colors=True), 1)
+            self.assertEqual(Clique(n).generating_function(), 1)
+            self.assertEqual(Cycle(n).generating_function(permutable_colors=True), 1)
+
+    def test_parameterized_number_of_colors(self):
+        a = Variable('a')
+        b = Variable('b')
+        self.assertEqual(Clique(2).orbit_count(vertex_colors=a, edge_colors=b), a*(a+1)//2 * b)
 
     def test_unlabeled_graphs(self):
         # http://oeis.org/A000088

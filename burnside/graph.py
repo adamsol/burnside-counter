@@ -3,10 +3,11 @@ import operator
 from abc import ABC, abstractmethod
 from collections import Counter
 from functools import reduce
+from itertools import permutations
 
 from .group import S, Z
 from .polynomial import Polynomial, Term, Variable
-from .utils import DisjointSets, fact, KeyDefaultDict, permutation_representative, permutation_types
+from .utils import DisjointSets, fact, KeyDefaultDict, permutation_cycles, permutation_representative, permutation_types
 
 __all__ = [
     'Vertex', 'Edge', 'Face', 'Graph',
@@ -180,6 +181,9 @@ class Graph(ABC):
             (self.edge_variables, edge_colors, edge_color_count_multiplier),
             (self.face_variables, face_colors, 1),
         ]:
+            if color_count == 1:
+                continue
+
             if permutable_colors:
                 tmp = 0
                 color_count //= color_count_multiplier
@@ -195,22 +199,45 @@ class Graph(ABC):
 
         return result
 
-    def generating_function(self, *, vertex_colors=1, edge_colors=1, face_colors=1):
+    def generating_function(self, *, vertex_colors=1, edge_colors=1, face_colors=1, permutable_colors=False):
         def color_variables(t):
-            colors, prefix = t
-            result = list(map(Variable, colors if isinstance(colors, (str, tuple, list)) else ['{}_{}'.format(prefix, chr(ord('a') + i)) for i in range(colors)]))
-            if 1 <= len(result) <= 2:
-                result[-1] = 1
-            return result
+            colors, prefix = t  # `colors` here may be either a number or a list of color names
+            return list(map(Variable, colors if isinstance(colors, (str, tuple, list)) else ['{}_{}'.format(prefix, chr(ord('a') + i)) for i in range(colors)]))
 
         vertex_colors, edge_colors, face_colors = map(color_variables, zip([vertex_colors, edge_colors, face_colors], 'vef'))
 
-        # TODO: handle permutable colors like in orbit_count
-        return self.cycle_index(skip_vertices=(vertex_colors == 1), skip_edges=(edge_colors == 1), skip_faces=(face_colors == 1)).substitute({
-            **{var: sum(color ** l for color in vertex_colors) for l, var in self.vertex_variables.items()},
-            **{var: sum(color ** l for color in edge_colors) for l, var in self.edge_variables.items()},
-            **{var: sum(color ** l for color in face_colors) for l, var in self.face_variables.items()},
-        })
+        result = self.cycle_index(skip_vertices=(len(vertex_colors) == 1), skip_edges=(len(edge_colors) == 1), skip_faces=(len(face_colors) == 1))
+
+        for variables, colors in [
+            (self.vertex_variables, vertex_colors),
+            (self.edge_variables, edge_colors),
+            (self.face_variables, face_colors),
+        ]:
+            color_count = len(colors)
+            if color_count == 1:
+                continue
+
+            if permutable_colors:
+                tmp = 0
+                for permutation in permutations(range(color_count)):
+                    p = permutation_cycles(permutation, colors)
+                    # The reasoning is identical to that in `orbit_count`, but additionally record the colors used for each cycle (`c` is a list of colors in a cycle).
+                    tmp += result.substitute({var: sum(len(c) * reduce(operator.mul, c) ** (l // len(c)) for c in p if l % len(c) == 0) for l, var in variables.items()})
+                result = tmp // fact[color_count]
+                # Group together terms that correspond to the same partition of colors.
+                terms = []
+                for term in result.terms.values():
+                    exponents = sorted([term.vars[color] for color in colors], reverse=True)
+                    terms.append(Term(term.coef, {**term.vars, **{color: exponents[i] for i, color in enumerate(colors)}}))
+                result = Polynomial(*terms) // result.denominator
+            else:
+                result = result.substitute({var: sum(color ** l for color in colors) for l, var in variables.items()})
+
+            # Simplify the result by removing a redundant color variable.
+            if color_count == 2:
+                result = result.substitute({colors[-1]: 1})
+
+        return result
 
 
 class Clique(Graph):

@@ -110,6 +110,22 @@ def permutation_representative(partition):
         s += c
     return permutation
 
+def permutation_cycles(permutation, objects=None):
+    result = []
+    v = set(range(len(permutation)))
+    while v:
+        i = v.pop()
+        j = i
+        c = []
+        while True:
+            c.append(objects[j] if objects else j)
+            j = permutation[j]
+            if j == i:
+                result.append(c)
+                break
+            v.remove(j)
+    return result
+
 
 # Union-Find (disjoint set forests)
 # http://code.activestate.com/recipes/577225-union-find/
