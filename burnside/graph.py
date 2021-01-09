@@ -78,7 +78,7 @@ class Graph(ABC):
     def apply(self, op):
         pass
 
-    def cycle_index_monomial(self, op=None, skip_vertices=False, skip_edges=False, skip_faces=False, edge_direction=False):
+    def cycle_index_monomial(self, op=None, skip_vertices=False, skip_edges=False, skip_faces=False, edge_direction=False, face_arrows=False):
         self.build()
         vertices = {v.p: v for v in self.vertices}
         edges = {e.p: e for e in self.edges}
@@ -120,6 +120,7 @@ class Graph(ABC):
                 DisjointSets.union(e, edges[e.p])
 
                 if p == e.p:
+                    # For this to work, all edges must be created with vertices sorted in ascending order when building a graph.
                     if edge_direction and e.a.p > e.b.p:
                         return 0
                     edges_to_delete.append(p)
@@ -134,6 +135,9 @@ class Graph(ABC):
                 DisjointSets.union(f, faces[f.p])
 
                 if p == f.p:
+                    # For this to work, all faces must be created with the lowest-index vertex first when building a graph.
+                    if face_arrows and f.vertices[0].p != min(f.p):
+                        return 0
                     faces_to_delete.append(p)
 
             for p in faces_to_delete:
@@ -170,16 +174,18 @@ class Graph(ABC):
 
         return a // b
 
-    def orbit_count(self, *, vertex_colors=1, edge_colors=1, face_colors=1, permutable_colors=False, edge_direction=False, reversible_edges=False):
+    def orbit_count(self, *, vertex_colors=1, edge_colors=1, face_colors=1, permutable_colors=False, edge_direction=False, reversible_edges=False, face_arrows=0):
         edge_color_count_multiplier = 2 if edge_direction else 1
         edge_colors *= edge_color_count_multiplier
+        face_color_count_multiplier = face_arrows or 1
+        face_colors *= face_color_count_multiplier
 
-        result = self.cycle_index(skip_vertices=(vertex_colors == 1), skip_edges=(edge_colors == 1), skip_faces=(face_colors == 1), edge_direction=edge_direction, reversible_edges=reversible_edges)
+        result = self.cycle_index(skip_vertices=(vertex_colors == 1), skip_edges=(edge_colors == 1), skip_faces=(face_colors == 1), edge_direction=edge_direction, reversible_edges=reversible_edges, face_arrows=face_arrows)
 
         for variables, color_count, color_count_multiplier in [
             (self.vertex_variables, vertex_colors, 1),
             (self.edge_variables, edge_colors, edge_color_count_multiplier),
-            (self.face_variables, face_colors, 1),
+            (self.face_variables, face_colors, face_color_count_multiplier),
         ]:
             if color_count == 1:
                 continue
@@ -461,7 +467,7 @@ class Cube(Graph):
         if self.empty:
             return
         self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 3), (0, 4), (1, 2), (1, 5), (2, 3), (2, 6), (3, 7), (4, 5), (4, 7), (5, 6), (6, 7)]]
-        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c], self.vertices[d]) for a, b, c, d in [(0, 1, 2, 3), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7), (4, 5, 6, 7)]]
+        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c], self.vertices[d]) for a, b, c, d in [(0, 1, 2, 3), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (0, 4, 7, 3), (4, 5, 6, 7)]]
 
     def operations(self):
         return Z(24) * Z(2 if self.reflection else 1)
@@ -495,7 +501,7 @@ class Octahedron(Graph):
         if self.empty:
             return
         self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (1, 5), (2, 3), (2, 5), (3, 4), (3, 5), (4, 5)]]
-        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c]) for a, b, c in [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 1), (5, 1, 2), (5, 2, 3), (5, 3, 4), (5, 4, 1)]]
+        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c]) for a, b, c in [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 1), (1, 2, 5), (2, 3, 5), (3, 4, 5), (1, 5, 4)]]
         
     def operations(self):
         return Z(24) * Z(2 if self.reflection else 1)

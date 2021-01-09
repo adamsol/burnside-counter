@@ -327,6 +327,10 @@ class GraphTests(TestCase):
         self.assertEqual(Cube().orbit_count(face_colors=2, permutable_colors=True), 6)
         self.assertEqual(Octahedron().orbit_count(face_colors=2, permutable_colors=True), 15)
 
+    def test_face_arrows(self):
+        # http://www.baxterweb.com/puzzles/burnside5.pdf (page 11)
+        self.assertEqual(Cube().orbit_count(face_arrows=4), 192)
+
     def test_partitions_into_4_parts(self):
         # http://oeis.org/A001400
         for n, a_n in enumerate([1, 1, 2, 3, 5, 6, 9, 11, 15, 18]):
