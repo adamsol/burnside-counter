@@ -3,7 +3,7 @@ import operator
 from abc import ABC, abstractmethod
 from collections import Counter
 from functools import reduce
-from itertools import permutations
+from itertools import accumulate, chain, permutations
 
 from .group import S, Z
 from .polynomial import Polynomial, Term, Variable
@@ -14,7 +14,7 @@ __all__ = [
     'Node', 'Clique', 'Cycle',
     'Join', 'Biclique', 'Wheel',
     'Grid', 'Prism',
-    'Tetrahedron', 'Cube', 'Octahedron',
+    'Tetrahedron', 'Cube', 'Octahedron', 'Dodecahedron', 'Icosahedron',
 ]
 
 
@@ -45,8 +45,8 @@ class Edge:
 
 
 class Face:
-    def __init__(self, *vertices):
-        self.vertices = vertices
+    def __init__(self, vertices):
+        self.vertices = list(vertices)
 
     @property
     def p(self):
@@ -396,9 +396,9 @@ class Prism(Graph):
             *(Edge(self.vertices[i], self.vertices[i + self.base]) for i in range(self.base)),
         ]
         self.faces = [
-            Face(*(self.vertices[i] for i in range(self.base))),
-            Face(*(self.vertices[i + self.base] for i in range(self.base))),
-            *(Face(self.vertices[i], self.vertices[(i+1) % self.base], self.vertices[(i+1) % self.base + self.base], self.vertices[i + self.base]) for i in range(self.base)),
+            Face([self.vertices[i] for i in range(self.base)]),
+            Face([self.vertices[i + self.base] for i in range(self.base)]),
+            *(Face([self.vertices[i], self.vertices[(i+1) % self.base], self.vertices[(i+1) % self.base + self.base], self.vertices[i + self.base]]) for i in range(self.base)),
         ]
 
     def operations(self):
@@ -412,106 +412,127 @@ class Prism(Graph):
             if op[1]:
                 v.update(lambda p: self.base - 1 - p % self.base + p // self.base * self.base)
 
-
-class Tetrahedron(Graph):
-    X = [1, 3, 2, 0]
-    Y = [1, 2, 0, 3]
-    PERMUTATIONS = [
-        [], [X], [Y],
-        [X, X], [X, Y], [Y, X], [Y, Y],
-        [X, X, Y], [X, Y, Y], [Y, X, X], [Y, Y, X],
-        [X, Y, Y, X],
-    ]
+                
+class Polyhedron(Graph):
+    SIZE = 0  # number of vertices
+    FACES = []  # each face should have the lowest-index vertex first
+    BASE_PERMUTATIONS = {}
+    PERMUTATIONS = []
+    REFLECTION = []
 
     def __init__(self, *, reflection=False, **kwargs):
-        super().__init__(4, **kwargs)
+        super().__init__(self.SIZE, **kwargs)
+        self._permutations = []
+        for s in self.PERMUTATIONS:
+            permutation = list(range(self.SIZE))
+            for c in s:
+                permutation = [self.BASE_PERMUTATIONS[c][i] for i in permutation]
+            self._permutations.append(permutation)
         self.reflection = reflection
+        if reflection:
+            self._reflection_dict = {**dict(self.REFLECTION), **dict([(b, a) for a, b in self.REFLECTION])}
 
     def build(self):
         super().build()
         if self.empty:
             return
-        self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]]
-        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c]) for a, b, c in [(0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)]]
+        pairs = {(min(a, b), max(a, b)) for face in self.FACES for a, b in zip(face, face[1:]+face[:1])}
+        self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in pairs]
+        self.faces = [Face(self.vertices[i] for i in face) for face in self.FACES]
 
     def operations(self):
-        return Z(12) * Z(2 if self.reflection else 1)
+        return Z(len(self.PERMUTATIONS)) * Z(2 if self.reflection else 1)
 
     def apply(self, op):
         for v in self.vertices:
-            for permutation in self.PERMUTATIONS[op[0]]:
-                v.update(lambda p: permutation[p])
+            permutation = self._permutations[op[0]]
+            v.update(lambda p: permutation[p])
             if op[1]:
-                v.update(lambda p: 1 - p if p in {0, 1} else p)
+                v.update(lambda p: self._reflection_dict.get(p, p))
 
 
-class Cube(Graph):
-    # https://www.euclideanspace.com/maths/discrete/groups/categorise/finite/cube/index.htm
-    X = [1, 2, 3, 0, 5, 6, 7, 4]
-    Y = [4, 0, 3, 7, 5, 1, 2, 6]
+class Tetrahedron(Polyhedron):
+    SIZE = 4
+    FACES = [(0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)]
+    BASE_PERMUTATIONS = {
+        'A': [1, 3, 2, 0],
+        'B': [1, 2, 0, 3],
+    }
     PERMUTATIONS = [
-        [], [X], [Y], [X, X],
-        [X, Y], [Y, X], [Y, Y], [X, X, X],
-        [X, X, Y], [X, Y, X], [X, Y, Y], [Y, X, X],
-        [Y, Y, X], [Y, Y, Y], [X, X, X, Y], [X, X, Y, X],
-        [X, X, Y, Y], [X, Y, X, X], [X, Y, Y, Y], [Y, X, X, X],
-        [Y, Y, Y, X], [X, X, X, Y, X], [X, Y, X, X, X], [X, Y, Y, Y, X],
+        '', 'A', 'B',
+        'AA', 'AB', 'BA', 'BB',
+        'AAB', 'ABB', 'BAA', 'BBA',
+        'ABBA',
     ]
-
-    def __init__(self, *, reflection=False, **kwargs):
-        super().__init__(8, **kwargs)
-        self.reflection = reflection
-
-    def build(self):
-        super().build()
-        if self.empty:
-            return
-        self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 3), (0, 4), (1, 2), (1, 5), (2, 3), (2, 6), (3, 7), (4, 5), (4, 7), (5, 6), (6, 7)]]
-        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c], self.vertices[d]) for a, b, c, d in [(0, 1, 2, 3), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (0, 4, 7, 3), (4, 5, 6, 7)]]
-
-    def operations(self):
-        return Z(24) * Z(2 if self.reflection else 1)
-
-    def apply(self, op):
-        for v in self.vertices:
-            for permutation in self.PERMUTATIONS[op[0]]:
-                v.update(lambda p: permutation[p])
-            if op[1]:
-                v.update(lambda p: (p + 4) % 8)
+    REFLECTION = [(0, 1)]
 
 
-class Octahedron(Graph):
-    X = [0, 2, 3, 4, 1, 5]
-    Y = [4, 1, 0, 3, 5, 2]
-    PERMUTATIONS = [
-        [], [X], [Y], [X, X],
-        [X, Y], [Y, X], [Y, Y], [X, X, X],
-        [X, X, Y], [X, Y, X], [X, Y, Y], [Y, X, X],
-        [Y, Y, X], [Y, Y, Y], [X, X, X, Y], [X, X, Y, X],
-        [X, X, Y, Y], [X, Y, X, X], [X, Y, Y, Y], [Y, X, X, X],
-        [Y, Y, Y, X], [X, X, X, Y, X], [X, Y, X, X, X], [X, Y, Y, Y, X],
+# https://www.euclideanspace.com/maths/discrete/groups/categorise/finite/cube/index.htm
+OCTAHEDRAL_SYMMETRY = [
+    '', 'A', 'B',
+    'AA', 'AB', 'BA', 'BB',
+    'AAA', 'AAB', 'ABA', 'ABB', 'BAA', 'BBA', 'BBB',
+    'AAAB', 'AABA', 'AABB', 'ABAA', 'ABBB', 'BAAA', 'BBBA',
+    'AAABA', 'ABAAA', 'ABBBA',
+]
+
+
+class Cube(Polyhedron):
+    SIZE = 8
+    FACES = [(0, 1, 2, 3), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (0, 4, 7, 3), (4, 5, 6, 7)]
+    BASE_PERMUTATIONS = {
+        'A': [1, 2, 3, 0, 5, 6, 7, 4],
+        'B': [4, 0, 3, 7, 5, 1, 2, 6],
+    }
+    PERMUTATIONS = OCTAHEDRAL_SYMMETRY
+    REFLECTION = [(i, i+4) for i in range(4)]
+
+
+class Octahedron(Polyhedron):
+    SIZE = 6
+    FACES = [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 1), (1, 2, 5), (2, 3, 5), (3, 4, 5), (1, 5, 4)]
+    BASE_PERMUTATIONS = {
+        'A': [0, 2, 3, 4, 1, 5],
+        'B': [4, 1, 0, 3, 5, 2],
+    }
+    PERMUTATIONS = OCTAHEDRAL_SYMMETRY
+    REFLECTION = [(0, 5)]
+
+
+# https://github.com/sympy/sympy/blob/master/sympy/combinatorics/polyhedron.py
+ICOSAHEDRAL_SYMMETRY = [
+    '',
+    'ABA', 'BBBBAAA', 'AAABAAAA', 'AAAABAAA', 'BAA',
+    'BBA', 'BBBAAAA', 'ABBBAAA', 'AABBBAA', 'AAABBBA',
+    'AAAABBAAAAB', 'AAAABBAAAABAAA', 'AAAABBAAAABA', 'AAAABBAAAABAAAA', 'AAAABBAAAABAA',
+    *chain.from_iterable(accumulate([p]*4) for p in ['A', 'B', 'ABAAAA', 'BBBBA', 'ABBBB', 'AAAABA']),
+    *chain.from_iterable(accumulate([p]*2) for p in ['BA', 'AB', 'BBBBAA', 'ABBBBA', 'AAAABAA', 'AAAABB', 'BBAAAA', 'BBBAA', 'ABBBA', 'AAABBA']),
+]
+
+
+class Dodecahedron(Polyhedron):
+    SIZE = 20
+    FACES = [
+        (0, 1, 2, 3, 4), (0, 1, 6, 10, 5), (1, 2, 7, 11, 6), (2, 3, 8, 12, 7), (3, 4, 9, 13, 8), (0, 4, 9, 14, 5),
+        (5, 10, 16, 15, 14), (6, 10, 16, 17, 11), (7, 11, 17, 18, 12), (8, 12, 18, 19, 13), (9, 13, 19, 15, 14), (15, 16, 17, 18, 19),
     ]
-
-    def __init__(self, *, reflection=False, **kwargs):
-        super().__init__(6, **kwargs)
-        self.reflection = reflection
-
-    def build(self):
-        super().build()
-        if self.empty:
-            return
-        self.edges = [Edge(self.vertices[a], self.vertices[b]) for a, b in [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 4), (1, 5), (2, 3), (2, 5), (3, 4), (3, 5), (4, 5)]]
-        self.faces = [Face(self.vertices[a], self.vertices[b], self.vertices[c]) for a, b, c in [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 1), (1, 2, 5), (2, 3, 5), (3, 4, 5), (1, 5, 4)]]
-        
-    def operations(self):
-        return Z(24) * Z(2 if self.reflection else 1)
-
-    def apply(self, op):
-        for v in self.vertices:
-            for permutation in self.PERMUTATIONS[op[0]]:
-                v.update(lambda p: permutation[p])
-            if op[1]:
-                v.update(lambda p: 5 - p if p in {0, 5} else p)
+    BASE_PERMUTATIONS = {
+        'A': [1, 2, 3, 4, 0, 6, 7, 8, 9, 5, 11, 12, 13, 14, 10, 16, 17, 18, 19, 15],
+        'B': [5, 0, 4, 9, 14, 10, 1, 3, 13, 15, 6, 2, 8, 19, 16, 17, 11, 7, 12, 18],
+    }
+    PERMUTATIONS = ICOSAHEDRAL_SYMMETRY
+    REFLECTION = [(1, 4), (2, 3), (6, 9), (7, 8), (10, 14), (11, 13), (15, 16), (17, 19)]
 
 
-# TODO: dodecahedron and icosahedron
+class Icosahedron(Polyhedron):
+    SIZE = 12
+    FACES = [
+        (0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 5), (0, 1, 5), (1, 6, 7), (1, 2, 7), (2, 7, 8), (2, 3, 8), (3, 8, 9),
+        (3, 4, 9), (4, 9, 10), (4, 5, 10), (5, 6, 10), (1, 5, 6), (6, 7, 11), (7, 8, 11), (8, 9, 11), (9, 10, 11), (6, 10, 11),
+    ]
+    BASE_PERMUTATIONS = {
+        'A': [0, 2, 3, 4, 5, 1, 7, 8, 9, 10, 6, 11],
+        'B': [5, 1, 0, 4, 10, 6, 7, 2, 3, 9, 11, 8],
+    }
+    PERMUTATIONS = ICOSAHEDRAL_SYMMETRY
+    REFLECTION = [(2, 5), (3, 4), (6, 7), (8, 10)]

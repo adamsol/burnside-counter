@@ -303,10 +303,10 @@ class GraphTests(TestCase):
 
     def test_tetrahedral_symmetry_with_reflections(self):
         # https://oeis.org/A000332
+        # https://oeis.org/A063842
         n = Variable('n')
-        formula = n * (n+1) * (n+2) * (n+3) // 24
-        self.assertEqual(Tetrahedron(reflection=True).orbit_count(face_colors=n), formula)
-        self.assertEqual(Tetrahedron(reflection=True).orbit_count(vertex_colors=n), formula)
+        formula = (n**6 + 9*n**4 + 14*n**2) // 24
+        self.assertEqual(Tetrahedron(reflection=True).orbit_count(edge_colors=n), formula)
 
     def test_octahedral_symmetry(self):
         # https://oeis.org/A047780
@@ -315,12 +315,26 @@ class GraphTests(TestCase):
         self.assertEqual(Cube().orbit_count(face_colors=n), formula)
         self.assertEqual(Octahedron().orbit_count(vertex_colors=n), formula)
 
-    def test_octahedral_symmetry_with_reflections(self):
-        # https://oeis.org/A198833
+    def test_octahedral_symmetry_with_reflection(self):
+        # https://oeis.org/A199406
         n = Variable('n')
-        formula = n * (n+1) * (n**2+n+2) * (n**2+n+4) // 48
-        self.assertEqual(Cube(reflection=True).orbit_count(face_colors=n), formula)
-        self.assertEqual(Octahedron(reflection=True).orbit_count(vertex_colors=n), formula)
+        formula = (n**12 + 3*n**8 + 12*n**7 + 4*n**6 + 8*n**4 + 12*n**3 + 8*n**2) // 48
+        self.assertEqual(Cube(reflection=True).orbit_count(edge_colors=n), formula)
+        self.assertEqual(Octahedron(reflection=True).orbit_count(edge_colors=n), formula)
+
+    def test_icosahedral_symmetry(self):
+        # https://oeis.org/A000545
+        n = Variable('n')
+        formula = (n**12 + 15*n**6 + 44*n**4) // 60
+        self.assertEqual(Dodecahedron().orbit_count(face_colors=n), formula)
+        self.assertEqual(Icosahedron().orbit_count(vertex_colors=n), formula)
+
+    def test_icosahedral_symmetry_with_reflection(self):
+        # https://oeis.org/A337963
+        n = Variable('n')
+        formula = (n**30 + 15*n**17 + 15*n**16 + n**15 + 20*n**10 + 24*n**6 + 20*n**5 + 24*n**3) // 120
+        self.assertEqual(Dodecahedron(reflection=True).orbit_count(edge_colors=n), formula)
+        self.assertEqual(Icosahedron(reflection=True).orbit_count(edge_colors=n), formula)
 
     def test_complementary_face_colorings(self):
         self.assertEqual(Tetrahedron().orbit_count(face_colors=2, permutable_colors=True), 3)
