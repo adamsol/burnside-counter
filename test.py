@@ -165,15 +165,15 @@ class GraphTests(TestCase):
         self.assertEqual(str(Cube().generating_function(face_colors='AB')), 'A^6 + A^5 + 2 A^4 + 2 A^3 + 2 A^2 + A + 1')
 
     def test_permutable_colors(self):
-        graph = Clique(4)
-        self.assertEqual(graph.orbit_count(edge_colors=2), 11)
-        self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True), 6)
-        self.assertEqual(graph.orbit_count(edge_direction=True), 4)
-        self.assertEqual(graph.orbit_count(permutable_colors=True, edge_direction=True), 4)
-        self.assertEqual(graph.orbit_count(edge_direction=True, reversible_edges=True), 3)
-        self.assertEqual(graph.orbit_count(permutable_colors=True, edge_direction=True, reversible_edges=True), 3)
-        self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True), 88)
-        self.assertEqual(graph.orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True, reversible_edges=True), 52)
+        self.assertEqual(Clique(4).orbit_count(edge_colors=2), 11)
+        self.assertEqual(Clique(4).orbit_count(edge_colors=2, permutable_colors=True), 6)
+        self.assertEqual(Clique(4).orbit_count(edge_direction=True), 4)
+        self.assertEqual(Clique(4).orbit_count(permutable_colors=True, edge_direction=True), 4)
+        self.assertEqual(Clique(4).orbit_count(edge_direction=True, reversible_edges=True), 3)
+        self.assertEqual(Clique(4).orbit_count(permutable_colors=True, edge_direction=True, reversible_edges=True), 3)
+        self.assertEqual(Clique(4).orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True), 88)
+        self.assertEqual(Clique(4).orbit_count(edge_colors=2, permutable_colors=True, edge_direction=True, reversible_edges=True), 52)
+        self.assertEqual(Cube().orbit_count(face_colors=2, permutable_colors=True), 6)
 
     def test_generating_function_with_permutable_colors(self):
         self.assertEqual(str(Clique(3).generating_function(vertex_colors=2, permutable_colors=True)), 'v_a^3 + v_a^2')
@@ -208,6 +208,13 @@ class GraphTests(TestCase):
         a = Variable('a')
         b = Variable('b')
         self.assertEqual(Clique(2).orbit_count(vertex_colors=a, edge_colors=b), a*(a+1)//2 * b)
+
+    def test_face_arrows(self):
+        # http://www.baxterweb.com/puzzles/burnside5.pdf (page 11)
+        self.assertEqual(Cube().orbit_count(face_arrows=4), 192)
+
+
+class OeisTests(TestCase):
 
     def test_unlabeled_graphs(self):
         # http://oeis.org/A000088
@@ -336,16 +343,7 @@ class GraphTests(TestCase):
         self.assertEqual(Dodecahedron(reflection=True).orbit_count(edge_colors=n), formula)
         self.assertEqual(Icosahedron(reflection=True).orbit_count(edge_colors=n), formula)
 
-    def test_complementary_face_colorings(self):
-        self.assertEqual(Tetrahedron().orbit_count(face_colors=2, permutable_colors=True), 3)
-        self.assertEqual(Cube().orbit_count(face_colors=2, permutable_colors=True), 6)
-        self.assertEqual(Octahedron().orbit_count(face_colors=2, permutable_colors=True), 15)
-
-    def test_face_arrows(self):
-        # http://www.baxterweb.com/puzzles/burnside5.pdf (page 11)
-        self.assertEqual(Cube().orbit_count(face_arrows=4), 192)
-
-    def test_partitions_into_4_parts(self):
+    def test_partitions_into_four_parts(self):
         # http://oeis.org/A001400
         for n, a_n in enumerate([1, 1, 2, 3, 5, 6, 9, 11, 15, 18]):
             self.assertEqual(Clique(n).orbit_count(vertex_colors=4, permutable_colors=True), a_n)
@@ -365,20 +363,41 @@ class GraphTests(TestCase):
         for n, a_n in enumerate([1, 1, 2, 16, 252, 6814, 244344, 10746377]):
             self.assertEqual(Grid(n, reflection=True).generating_function(vertex_colors=2).extract(n), a_n)
 
-    def test_exam_problems(self):
+
+class ExamTests(TestCase):
+
+    def test_prisms(self):
         # 2013-06
         self.assertEqual(Prism(3, reflection=True).generating_function(vertex_colors=2, edge_colors=2).extract(lambda vars: vars['v_a'] == 3 and vars['e_a'] == 5), 222)
+
+    def test_joined_cycles(self):
         # 2014-09
         self.assertEqual(Join(Cycle(5), Cycle(4)).generating_function(vertex_colors=3).extract(lambda vars: set(vars.values()) == {3}), 90)
+
+    def test_tournaments(self):
+        # 2015-06
+        self.assertEqual(Clique(5).orbit_count(edge_direction=True, reversible_edges=True), 10)
+
+    def test_rectangles(self):
         # 2016-06
         self.assertEqual(Join(Clique(3, empty=True), Cycle(4, empty=True)).generating_function(edge_colors=2).extract(6), 48)
+
+    def test_matrices(self):
         # 2017-06
         self.assertEqual(Biclique(2, 3).generating_function(edge_colors=3).extract(lambda vars: len(vars) == 3), 56)
+
+    def test_congruences(self):
         # 2017-09
         self.assertEqual(Cycle(6).generating_function(vertex_colors='210').extract(lambda vars: (2*vars['2'] + vars['1']) % 3 == 0), 46)
+
+    def test_wheel_graphs(self):
         # 2018-06
         k = Variable('k')
-        self.assertEqual(Wheel(6, reflection=True).orbit_count(vertex_colors=k, edge_direction=True), (1024*k**7 + 96*k**5 + 16*k**4 + 8*k**3 + 2*k**2) // 3)
+        self.assertEqual(Join(Cycle(6, reflection=True), Node()).orbit_count(vertex_colors=k, edge_direction=True), (1024*k**7 + 96*k**5 + 16*k**4 + 8*k**3 + 2*k**2) // 3)
+
+    def test_bicliques(self):
+        # 2019-06
+        self.assertEqual(Biclique(3, reflection=True).orbit_count(edge_direction=True), 18)
 
 
 if __name__ == '__main__':

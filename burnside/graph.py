@@ -12,9 +12,8 @@ from .utils import DisjointSets, fact, KeyDefaultDict, permutation_cycles, permu
 __all__ = [
     'Vertex', 'Edge', 'Face', 'Graph',
     'Node', 'Clique', 'Cycle',
-    'Join', 'Biclique', 'Wheel',
-    'Grid', 'Prism',
-    'Tetrahedron', 'Cube', 'Octahedron', 'Dodecahedron', 'Icosahedron',
+    'Join', 'Biclique', 'Grid',
+    'Prism', 'Tetrahedron', 'Cube', 'Octahedron', 'Dodecahedron', 'Icosahedron',
 ]
 
 
@@ -346,18 +345,6 @@ class Biclique(Join):
                     v.translate(-s)
         else:
             super().apply(op[0])
-
-
-class Wheel(Join):
-    def __init__(self, order, *, reflection=False, **kwargs):
-        super().__init__(Cycle(order, reflection=reflection), Node(), **kwargs)
-        self.reflection = reflection
-
-    def operations(self):
-        return self.graphs[0].operations()
-
-    def apply(self, op):
-        self.graphs[0].apply(op)
 
 
 class Grid(Graph):
