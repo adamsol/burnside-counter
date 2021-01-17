@@ -60,8 +60,11 @@ class Graph(ABC):
 
     def reset(self):
         self.vertices = []
+        # For `edge_direction` and `face_arrows` to work properly,
+        # every edge and face should have the lowest-index vertex first when building the graph.
         self.edges = []
         self.faces = []
+
         self.vertex_variables = KeyDefaultDict(lambda l: Variable('v_{}'.format(l)))
         self.edge_variables = KeyDefaultDict(lambda l: Variable('e_{}'.format(l)))
         self.face_variables = KeyDefaultDict(lambda l: Variable('f_{}'.format(l)))
@@ -79,83 +82,50 @@ class Graph(ABC):
 
     def cycle_index_monomial(self, op=None, skip_vertices=False, skip_edges=False, skip_faces=False, edge_direction=False, face_arrows=False):
         self.build()
-        vertices = {v.p: v for v in self.vertices}
-        edges = {e.p: e for e in self.edges}
-        faces = {f.p: f for f in self.faces}
 
-        for v in vertices.values():
-            v.cycle_length = 0
-            DisjointSets.make_set(v)
-        for e in edges.values():
-            e.cycle_length = 0
-            DisjointSets.make_set(e)
-        for f in faces.values():
-            f.cycle_length = 0
-            DisjointSets.make_set(f)
+        # The `skip_*` variables are for optimization.
+        data = [
+            {'elements': self.vertices, 'variables': self.vertex_variables, 'invalid_cycle': lambda v: False, 'skip': skip_vertices},
+            {'elements': self.edges, 'variables': self.edge_variables, 'invalid_cycle': lambda e: edge_direction and e.a.p > e.b.p, 'skip': skip_edges},
+            {'elements': self.faces, 'variables': self.face_variables, 'invalid_cycle': lambda f: face_arrows and f.vertices[0].p != min(f.p), 'skip': skip_faces},
+        ]
 
-        while vertices or edges or faces:
+        for d in data:
+            d['elements_dict'] = {x.p: x for x in d['elements']}
+
+            for x in d['elements_dict'].values():
+                x.cycle_length = 0
+                DisjointSets.make_set(x)
+
+        while any(d['elements_dict'] for d in data):
             if op is not None:
                 self.apply(op[0])
                 if op[1]:
                     for e in self.edges:
                         e.reverse()
 
-            vertices_to_delete = []
+            for d in data:
+                elements = d['elements_dict']
+                to_delete = []
 
-            for p, v in vertices.items():
-                v.cycle_length += 1
-                DisjointSets.union(v, vertices[v.p])
+                for p, x in elements.items():
+                    x.cycle_length += 1
+                    DisjointSets.union(x, elements[x.p])
 
-                if p == v.p:
-                    vertices_to_delete.append(p)
+                    if p == x.p:
+                        if d['invalid_cycle'](x):
+                            return 0
+                        to_delete.append(p)
 
-            for p in vertices_to_delete:
-                del vertices[p]
-
-            edges_to_delete = []
-
-            for p, e in edges.items():
-                e.cycle_length += 1
-                DisjointSets.union(e, edges[e.p])
-
-                if p == e.p:
-                    # For this to work, all edges must be created with vertices sorted in ascending order when building a graph.
-                    if edge_direction and e.a.p > e.b.p:
-                        return 0
-                    edges_to_delete.append(p)
-
-            for p in edges_to_delete:
-                del edges[p]
-
-            faces_to_delete = []
-
-            for p, f in faces.items():
-                f.cycle_length += 1
-                DisjointSets.union(f, faces[f.p])
-
-                if p == f.p:
-                    # For this to work, all faces must be created with the lowest-index vertex first when building a graph.
-                    if face_arrows and f.vertices[0].p != min(f.p):
-                        return 0
-                    faces_to_delete.append(p)
-
-            for p in faces_to_delete:
-                del faces[p]
+                for p in to_delete:
+                    del elements[p]
 
         result = 1
-        # The `skip_*` variables are for optimization.
-        if not skip_vertices:
-            vertex_cycles = set(DisjointSets.find(v) for v in self.vertices)
-            vertex_cycle_lengths = Counter(v.cycle_length for v in vertex_cycles)
-            result *= reduce(operator.mul, (self.vertex_variables[length] ** count for length, count in vertex_cycle_lengths.items()), 1)
-        if not skip_edges:
-            edge_cycles = set(DisjointSets.find(e) for e in self.edges)
-            edge_cycle_lengths = Counter(e.cycle_length for e in edge_cycles)
-            result *= reduce(operator.mul, (self.edge_variables[length] ** count for length, count in edge_cycle_lengths.items()), 1)
-        if not skip_faces:
-            face_cycles = set(DisjointSets.find(f) for f in self.faces)
-            face_cycle_lengths = Counter(f.cycle_length for f in face_cycles)
-            result *= reduce(operator.mul, (self.face_variables[length] ** count for length, count in face_cycle_lengths.items()), 1)
+        for d in data:
+            if not d['skip']:
+                cycles = set(DisjointSets.find(x) for x in d['elements'])
+                cycle_lengths = Counter(x.cycle_length for x in cycles)
+                result *= reduce(operator.mul, (d['variables'][length] ** count for length, count in cycle_lengths.items()), 1)
         return result
 
     def cycle_index(self, *, reversible_edges=False, **kwargs):
@@ -205,11 +175,12 @@ class Graph(ABC):
         return result
 
     def generating_function(self, *, vertex_colors=1, edge_colors=1, face_colors=1, permutable_colors=False):
-        def color_variables(t):
-            colors, prefix = t  # `colors` here may be either a number or a list of color names
+        def color_variables(colors, prefix):
+            # `colors` here may be either a number or a list of color names.
+            # The result is a list of color variables.
             return list(map(Variable, colors if isinstance(colors, (str, tuple, list)) else ['{}_{}'.format(prefix, chr(ord('a') + i)) for i in range(colors)]))
 
-        vertex_colors, edge_colors, face_colors = map(color_variables, zip([vertex_colors, edge_colors, face_colors], 'vef'))
+        vertex_colors, edge_colors, face_colors = (color_variables(colors, prefix) for colors, prefix in zip([vertex_colors, edge_colors, face_colors], 'vef'))
 
         result = self.cycle_index(skip_vertices=(len(vertex_colors) == 1), skip_edges=(len(edge_colors) == 1), skip_faces=(len(face_colors) == 1))
 
@@ -401,8 +372,8 @@ class Prism(Graph):
 
                 
 class Polyhedron(Graph):
-    SIZE = 0  # number of vertices
-    FACES = []  # each face should have the lowest-index vertex first
+    SIZE = 0
+    FACES = []
     BASE_PERMUTATIONS = {}
     PERMUTATIONS = []
     REFLECTION = []
