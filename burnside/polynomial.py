@@ -184,10 +184,10 @@ class Term:
         return hash((self.coef, frozenset(self.vars.items())))
 
     def __str__(self):
-        return '{}{}'.format(
-            str(self.coef) if not self.vars else '' if self.coef == 1 else '-' if self.coef == -1 else '{} '.format(self.coef),
-            ' '.join('{}{}'.format(var, '^{}'.format(exp) if exp > 1 else '') for var, exp in sorted(self.vars.items()) if exp),
-        ).strip()
+        return ''.join([
+            str(self.coef) if not self.vars else '' if self.coef == 1 else '-' if self.coef == -1 else f'{self.coef} ',
+            ' '.join(str(var) + (f'^{exp}' if exp > 1 else '') for var, exp in sorted(self.vars.items()) if exp),
+        ]).strip()
 
     def __repr__(self):
         return str(self)
@@ -317,8 +317,8 @@ class Polynomial:
         if self.denominator != 1:
             numerator = ' '.join(parts)
             if len(parts) > 1:
-                numerator = '({})'.format(numerator)
-            return '{} / {}'.format(numerator, self.denominator)
+                numerator = f'({numerator})'
+            return f'{numerator} / {self.denominator}'
         else:
             return ' '.join(parts)
 

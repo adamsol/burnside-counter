@@ -12,7 +12,7 @@ class TestCase(unittest.TestCase):
         self.start_time = time.time()
 
     def tearDown(self):
-        print('\n{:.3f}s {}.{} '.format(time.time() - self.start_time, type(self).__name__, self._testMethodName), end='')
+        print(f'\n{time.time()-self.start_time:.3f}s {type(self).__name__}.{self._testMethodName} ', end='')
 
 
 class PolynomialTests(TestCase):

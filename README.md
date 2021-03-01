@@ -9,7 +9,7 @@ and [Pólya enumeration theorem](https://en.wikipedia.org/wiki/P%C3%B3lya_enumer
 Requirements
 ------------
 
-* Python 3.5+
+* Python 3.6+
 
 
 Usage

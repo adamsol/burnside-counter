@@ -65,9 +65,9 @@ class Graph(ABC):
         self.edges = []
         self.faces = []
 
-        self.vertex_variables = KeyDefaultDict(lambda l: Variable('v_{}'.format(l)))
-        self.edge_variables = KeyDefaultDict(lambda l: Variable('e_{}'.format(l)))
-        self.face_variables = KeyDefaultDict(lambda l: Variable('f_{}'.format(l)))
+        self.vertex_variables = KeyDefaultDict(lambda l: Variable(f'v_{l}'))
+        self.edge_variables = KeyDefaultDict(lambda l: Variable(f'e_{l}'))
+        self.face_variables = KeyDefaultDict(lambda l: Variable(f'f_{l}'))
 
     def build(self):
         self.vertices = [Vertex(x) for x in range(self.size)]
@@ -178,7 +178,7 @@ class Graph(ABC):
         def color_variables(colors, prefix):
             # `colors` here may be either a number or a list of color names.
             # The result is a list of color variables.
-            return list(map(Variable, colors if isinstance(colors, (str, tuple, list)) else ['{}_{}'.format(prefix, chr(ord('a') + i)) for i in range(colors)]))
+            return list(map(Variable, colors if isinstance(colors, (str, tuple, list)) else [f'{prefix}_{chr(ord("a")+i)}' for i in range(colors)]))
 
         vertex_colors, edge_colors, face_colors = (color_variables(colors, prefix) for colors, prefix in zip([vertex_colors, edge_colors, face_colors], 'vef'))
 
