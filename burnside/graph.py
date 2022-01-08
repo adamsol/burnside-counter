@@ -204,7 +204,7 @@ class Graph(ABC):
                 terms = []
                 for term in result.terms.values():
                     exponents = sorted([term.vars[color] for color in colors], reverse=True)
-                    terms.append(Term(term.coef, {**term.vars, **{color: exponents[i] for i, color in enumerate(colors)}}))
+                    terms.append(Term(term.coef, {**term.vars, **dict(zip(colors, exponents))}))
                 result = Polynomial(*terms) // result.denominator
             else:
                 result = result.substitute({var: sum(color ** l for color in colors) for l, var in variables.items()})

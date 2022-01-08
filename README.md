@@ -40,4 +40,4 @@ print(Cube().generating_function(face_colors='xyz', permutable_colors=True))
 print(Tetrahedron().orbit_count(face_arrows=3))
 ```
 
-See ``test.py`` for more examples.
+See [test.py](test.py) for more examples.

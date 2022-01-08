@@ -184,10 +184,11 @@ class Term:
         return hash((self.coef, frozenset(self.vars.items())))
 
     def __str__(self):
+        # Since `vars` is a defaultdict, zero exponents may appear after lookup, hence the additional check.
         return ''.join([
             str(self.coef) if not self.vars else '' if self.coef == 1 else '-' if self.coef == -1 else f'{self.coef} ',
-            ' '.join(str(var) + (f'^{exp}' if exp > 1 else '') for var, exp in sorted(self.vars.items()) if exp),
-        ]).strip()
+            ' '.join(str(var) + (f'^{exp}' if exp > 1 else '') for var, exp in sorted(self.vars.items()) if exp > 0),
+        ])
 
     def __repr__(self):
         return str(self)
