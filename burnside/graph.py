@@ -180,14 +180,15 @@ class Graph(ABC):
             # The result is a list of color variables.
             return list(map(Variable, colors if isinstance(colors, (str, tuple, list)) else [f'{prefix}_{chr(ord("a")+i)}' for i in range(colors)]))
 
+        vertex_simplify, edge_simplify, face_simplify = [colors is 2 for colors in [vertex_colors, edge_colors, face_colors]]
         vertex_colors, edge_colors, face_colors = (color_variables(colors, prefix) for colors, prefix in zip([vertex_colors, edge_colors, face_colors], 'vef'))
 
         result = self.cycle_index(skip_vertices=(len(vertex_colors) == 1), skip_edges=(len(edge_colors) == 1), skip_faces=(len(face_colors) == 1))
 
-        for variables, colors in [
-            (self.vertex_variables, vertex_colors),
-            (self.edge_variables, edge_colors),
-            (self.face_variables, face_colors),
+        for variables, colors, simplify in [
+            (self.vertex_variables, vertex_colors, vertex_simplify),
+            (self.edge_variables, edge_colors, edge_simplify),
+            (self.face_variables, face_colors, face_simplify),
         ]:
             color_count = len(colors)
             if color_count == 1:
@@ -210,7 +211,7 @@ class Graph(ABC):
                 result = result.substitute({var: sum(color ** l for color in colors) for l, var in variables.items()})
 
             # Simplify the result by removing a redundant color variable.
-            if color_count == 2:
+            if simplify:
                 result = result.substitute({colors[-1]: 1})
 
         return result

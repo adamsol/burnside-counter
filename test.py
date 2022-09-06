@@ -161,8 +161,9 @@ class GraphTests(TestCase):
     def test_generating_function(self):
         self.assertEqual(str(Clique(3).generating_function(vertex_colors=2)), 'v_a^3 + v_a^2 + v_a + 1')
         self.assertEqual(str(Clique(4).generating_function(edge_colors=2)), 'e_a^6 + e_a^5 + 2 e_a^4 + 3 e_a^3 + 2 e_a^2 + e_a + 1')
+        self.assertEqual(str(Clique(2).generating_function(vertex_colors='xy')), 'x^2 + x y + y^2')
         self.assertEqual(str(Node().generating_function(vertex_colors='xyz')), 'x + y + z')
-        self.assertEqual(str(Cube().generating_function(face_colors='AB')), 'A^6 + A^5 + 2 A^4 + 2 A^3 + 2 A^2 + A + 1')
+        self.assertEqual(str(Cube().generating_function(face_colors='AB')), 'A^6 + A^5 B + 2 A^4 B^2 + 2 A^3 B^3 + 2 A^2 B^4 + A B^5 + B^6')
 
     def test_permutable_colors(self):
         self.assertEqual(Clique(4).orbit_count(edge_colors=2), 11)
@@ -179,7 +180,7 @@ class GraphTests(TestCase):
         self.assertEqual(str(Clique(3).generating_function(vertex_colors=2, permutable_colors=True)), 'v_a^3 + v_a^2')
         self.assertEqual(str(Clique(4).generating_function(edge_colors=2, permutable_colors=True)), 'e_a^6 + e_a^5 + 2 e_a^4 + 2 e_a^3')
         self.assertEqual(str(Node().generating_function(vertex_colors=5, permutable_colors=True)), 'v_a')
-        self.assertEqual(str(Cube().generating_function(edge_colors='xy', permutable_colors=True)), 'x^12 + x^11 + 5 x^10 + 13 x^9 + 27 x^8 + 38 x^7 + 29 x^6')
+        self.assertEqual(str(Cube().generating_function(edge_colors='xy', permutable_colors=True)), 'x^12 + x^11 y + 5 x^10 y^2 + 13 x^9 y^3 + 27 x^8 y^4 + 38 x^7 y^5 + 29 x^6 y^6')
         self.assertEqual(Cube().generating_function(edge_colors=3, permutable_colors=True).extract(lambda vars: set(vars.values()) == {4}), 282)
         self.assertEqual(Cube().generating_function(face_colors='rgb', permutable_colors=True).extract(lambda vars: vars['r'] == 4 and vars['g'] == 1), 2)
 
@@ -398,6 +399,10 @@ class ExamTests(TestCase):
     def test_bicliques(self):
         # 2019-06
         self.assertEqual(Biclique(3, reflection=True).orbit_count(edge_direction=True), 18)
+
+    def test_cubes(self):
+        # 2022-06
+        self.assertEqual(Cube().generating_function(edge_colors='rg', face_colors='RG').extract(lambda vars: vars['r'] + 2*vars['g'] + 3*vars['R'] + 5*vars['G'] == 50), 47)
 
 
 if __name__ == '__main__':
